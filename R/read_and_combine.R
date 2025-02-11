@@ -7,6 +7,7 @@
 #'
 #' @param file_name The full name or path of the BirdNET selection file.
 #' @return A POSIXct object representing the start datetime.
+#' @export
 #'
 #' @examples
 #' parse_birdnet_filename_datetime("1STSMM2_20241105_050000.BirdNET.selection.table.txt")
@@ -58,6 +59,7 @@ parse_birdnet_filename_datetime <- function(file_name) {
 #'   * `file_name` for reference
 #'   * `start_time` the parsed date-time from the filename
 #'   * `recording_window_time` the absolute time of each detection
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -107,6 +109,7 @@ read_birdnet_file <- function(file_path, tz = "UTC") {
 #'         - `file_name`
 #'         - `start_time`
 #'         - `recording_window_time`
+#' @export
 #'
 #' @examples
 #' \dontrun{
