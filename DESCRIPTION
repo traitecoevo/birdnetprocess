@@ -14,8 +14,11 @@ LazyData: true
 Depends:
     R (>= 4.1.0),
 Imports:
+    stringr,
     lubridate,
     dplyr,
+    readr,
+    purrr,
     ggplot2
 Suggests:
     covr,
