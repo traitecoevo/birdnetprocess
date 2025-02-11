@@ -4,32 +4,32 @@ author: "Will Cornwell"
 date: "`r Sys.Date()`"
 output: github_document
 ---
-```{r}
+```{r,include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 ```
 
-Install
+## Install
 ```{r}
 # install.packages("devtools") # if needed
-# devtools::install_github("traitecoevo/birdnetprocess")
+ devtools::install_github("traitecoevo/birdnetprocess")
 ```
 
-Example Usage
-1. Extract Start DateTime from a BirdNET Filename
+## Example Usage
+#### 1. Extract Start DateTime from a BirdNET Filename
 
 The function parse_birdnet_filename_datetime() assumes filenames follow this pattern:
 
 `SOMETHING_YYYYMMDD_HHMMSS.BirdNET.selection.table.txt`
 
-```{r}
+```{r,message=FALSE,results=FALSE}
 library(birdnetprocess)
-library(tidyverse)
+library(dplyr)
 ```
 
-# Extract a start date-time from a BirdNET filename
+### Extract a start date-time from a BirdNET filename
 ```{r}
 parsed_time <- birdnetprocess::parse_birdnet_filename_datetime(
   "1STSMM2_20241105_050000.BirdNET.selection.table.txt"
@@ -37,7 +37,8 @@ parsed_time <- birdnetprocess::parse_birdnet_filename_datetime(
 parsed_time
 ```
 Expected output is a POSIXct datetime (e.g., "2024-11-05 05:00:00 UTC").
-2. Read a Single BirdNET File
+
+#### 2. Read a Single BirdNET File
 
 Use read_birdnet_file() to read one BirdNET selection table. This will:
 
@@ -48,7 +49,6 @@ Use read_birdnet_file() to read one BirdNET selection table. This will:
         start_time
         recording_window_time, which is start_time + [Begin Time (s)].
 ```{r}
-library(birdnetprocess)
 
 # Suppose you have a BirdNET file at this path:
 birdnet_file <- "ignore/cc_output/1STSMM2_20241105_050000.BirdNET.selection.table.txt"
@@ -61,29 +61,31 @@ Note:
     Ensure the file’s “Begin Time (s)” column name matches the one you expect in your BirdNET exports.
     You can specify a timezone via the tz argument if needed.
 
-3. Read All BirdNET Files in a Folder
+#### 3. Read All BirdNET Files in a Folder
 
 If you have a folder full of BirdNET .selection.table.txt files, use read_birdnet_folder() to read them all at once. It will return a single combined tibble.
 ```{r}
-library(birdnetprocess)
 
-# Read all BirdNET files in a directory
+# Read all BirdNET files in a directory and combine into one data frame
 all_detections <- read_birdnet_folder(
-  folder = "path/to/BirdNET_outputs", 
+  folder = "ignore/cc_output/", 
   pattern = "BirdNET.selection.table.txt$",
   recursive = FALSE
 )
 
 dplyr::glimpse(all_detections)
 ```
+
+Then you can proceed to filter or process as needed for the project. 
+
 ### Dependencies
 
-Under the hood, birdnetprocess uses:
+Under the hood, `birdnetprocess` uses:
 
-    stringr for string matching and extraction.
-    lubridate for parsing and handling date-time data.
-    readr for reading tab-delimited text files.
-    dplyr and purrr for data manipulation.
+    - `stringr` for string matching and extraction.
+    - `lubridate` for parsing and handling date-time data.
+    - `readr` for reading tab-delimited text files.
+    - `dplyr` and `purrr` for data manipulation.
 
-These packages should be installed automatically when installing birdnetprocess from GitHub or from source (assuming they are listed in the DESCRIPTION under Imports).
+These packages should be installed automatically when installing `birdnetprocess` from GitHub.
 

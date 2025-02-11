@@ -3,21 +3,19 @@ birdnetprocess
 Will Cornwell
 2025-02-11
 
-``` r
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
-
-Install
+## Install
 
 ``` r
 # install.packages("devtools") # if needed
-# devtools::install_github("traitecoevo/birdnetprocess")
+ devtools::install_github("traitecoevo/birdnetprocess")
+#> Using GitHub PAT from the git credential store.
+#> Skipping install of 'birdnetprocess' from a github remote, the SHA1 (40d5e059) has not changed since last install.
+#>   Use `force = TRUE` to force installation
 ```
 
-Example Usage 1. Extract Start DateTime from a BirdNET Filename
+## Example Usage
+
+#### 1. Extract Start DateTime from a BirdNET Filename
 
 The function parse_birdnet_filename_datetime() assumes filenames follow
 this pattern:
@@ -26,20 +24,10 @@ this pattern:
 
 ``` r
 library(birdnetprocess)
-library(tidyverse)
-#> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-#> ✔ dplyr     1.1.4     ✔ readr     2.1.5
-#> ✔ forcats   1.0.0     ✔ stringr   1.5.1
-#> ✔ ggplot2   3.5.1     ✔ tibble    3.2.1
-#> ✔ lubridate 1.9.4     ✔ tidyr     1.3.1
-#> ✔ purrr     1.0.2     
-#> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-#> ✖ dplyr::filter() masks stats::filter()
-#> ✖ dplyr::lag()    masks stats::lag()
-#> ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+library(dplyr)
 ```
 
-# Extract a start date-time from a BirdNET filename
+### Extract a start date-time from a BirdNET filename
 
 ``` r
 parsed_time <- birdnetprocess::parse_birdnet_filename_datetime(
@@ -50,7 +38,8 @@ parsed_time
 ```
 
 Expected output is a POSIXct datetime (e.g., “2024-11-05 05:00:00 UTC”).
-2. Read a Single BirdNET File
+
+#### 2. Read a Single BirdNET File
 
 Use read_birdnet_file() to read one BirdNET selection table. This will:
 
@@ -62,7 +51,6 @@ Use read_birdnet_file() to read one BirdNET selection table. This will:
         recording_window_time, which is start_time + [Begin Time (s)].
 
 ``` r
-library(birdnetprocess)
 
 # Suppose you have a BirdNET file at this path:
 birdnet_file <- "ignore/cc_output/1STSMM2_20241105_050000.BirdNET.selection.table.txt"
@@ -89,38 +77,51 @@ Note:
     Ensure the file’s “Begin Time (s)” column name matches the one you expect in your BirdNET exports.
     You can specify a timezone via the tz argument if needed.
 
-3.  Read All BirdNET Files in a Folder
+#### 3. Read All BirdNET Files in a Folder
 
 If you have a folder full of BirdNET .selection.table.txt files, use
 read_birdnet_folder() to read them all at once. It will return a single
 combined tibble.
 
 ``` r
-library(birdnetprocess)
 
-# Read all BirdNET files in a directory
+# Read all BirdNET files in a directory and combine into one data frame
 all_detections <- read_birdnet_folder(
-  folder = "path/to/BirdNET_outputs", 
+  folder = "ignore/cc_output/", 
   pattern = "BirdNET.selection.table.txt$",
   recursive = FALSE
 )
-#> Warning in read_birdnet_folder(folder = "path/to/BirdNET_outputs", pattern =
-#> "BirdNET.selection.table.txt$", : No files found matching pattern in folder.
 
 dplyr::glimpse(all_detections)
-#> Rows: 0
-#> Columns: 0
+#> Rows: 35,141
+#> Columns: 15
+#> $ Selection             <dbl> 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1…
+#> $ View                  <chr> "Spectrogram 1", "Spectrogram 1", "Spectrogram 1…
+#> $ Channel               <dbl> 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+#> $ `Begin Time (s)`      <dbl> 891, 891, 903, 909, 909, 918, 927, 939, 948, 960…
+#> $ `End Time (s)`        <dbl> 894, 894, 906, 912, 912, 921, 930, 942, 951, 963…
+#> $ `Low Freq (Hz)`       <dbl> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+#> $ `High Freq (Hz)`      <dbl> 12000, 12000, 12000, 12000, 12000, 12000, 12000,…
+#> $ `Common Name`         <chr> "Willie-wagtail", "Western Whipbird", "Willie-wa…
+#> $ `Species Code`        <chr> "wilwag1", "weswhi1", "wilwag1", "wilwag1", "fla…
+#> $ Confidence            <dbl> 0.4031, 0.1383, 0.3234, 0.2425, 0.1355, 0.3680, …
+#> $ `Begin Path`          <chr> "cc/1STSMM2_20241020_010000.wav", "cc/1STSMM2_20…
+#> $ `File Offset (s)`     <dbl> 891, 891, 903, 909, 909, 918, 927, 939, 948, 960…
+#> $ file_name             <chr> "1STSMM2_20241020_010000.BirdNET.selection.table…
+#> $ start_time            <dttm> 2024-10-20 01:00:00, 2024-10-20 01:00:00, 2024-…
+#> $ recording_window_time <dttm> 2024-10-20 01:14:51, 2024-10-20 01:14:51, 2024-…
 ```
+
+Then you can proceed to filter or process as needed for the project.
 
 ### Dependencies
 
-Under the hood, birdnetprocess uses:
+Under the hood, `birdnetprocess` uses:
 
-    stringr for string matching and extraction.
-    lubridate for parsing and handling date-time data.
-    readr for reading tab-delimited text files.
-    dplyr and purrr for data manipulation.
+    - `stringr` for string matching and extraction.
+    - `lubridate` for parsing and handling date-time data.
+    - `readr` for reading tab-delimited text files.
+    - `dplyr` and `purrr` for data manipulation.
 
 These packages should be installed automatically when installing
-birdnetprocess from GitHub or from source (assuming they are listed in
-the DESCRIPTION under Imports).
+`birdnetprocess` from GitHub.
