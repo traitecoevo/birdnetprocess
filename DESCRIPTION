@@ -19,6 +19,8 @@ Imports:
     dplyr,
     readr,
     purrr,
+    ggstream,
+    tibble,
     ggplot2
 Suggests:
     covr,
