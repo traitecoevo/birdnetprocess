@@ -4,7 +4,7 @@
 \alias{quickconfidence}
 \title{quick confidence}
 \usage{
-quickconfidence(df, confidence = 0)
+quickconfidence(df, confidence = 0, bw = 0.75)
 }
 \arguments{
 \item{df}{the dataframe created by the read_birdnet_file or read_birdnet_folder function}

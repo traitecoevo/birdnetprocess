@@ -4,7 +4,7 @@
 \alias{birdtime}
 \title{bird time}
 \usage{
-birdtime(df, confidence = 0, bird.names)
+birdtime(df, confidence = 0, bird.names, bw = 0.75)
 }
 \arguments{
 \item{df}{the dataframe created by the read_birdnet_file or read_birdnet_folder function}

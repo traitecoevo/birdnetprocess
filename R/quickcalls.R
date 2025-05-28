@@ -22,7 +22,7 @@ quickcalls <- function(df, confidence = 0, remove.dominants = F){
     summarise(n = n()) %>%
     arrange(desc(n))
 
-  # extract date for plot
+  # extract date to print later
   date_range <- paste(format(lubridate::date(min(df$start_time)), "%d %B %Y"), " - ", format(date(max(df$start_time)), "%d %B %Y"))
 
   # to handle dominant species skewing the figure and making it illegible,

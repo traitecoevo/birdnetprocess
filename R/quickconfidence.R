@@ -12,7 +12,7 @@
 #'@examples
 #'\dontrun{ quickconfidence(df, confidence = 0) }
 
-quickconfidence <- function(df, confidence = 0){
+quickconfidence <- function(df, confidence = 0, bw = 0.75){
 
 # mutate confidence into bins
 df <- df %>%
@@ -47,7 +47,7 @@ palette = c("#FFFFFF", "#FFFFE5", "#F7FCB9", "#D9F0A3", "#ADDD8E", "#78C679", "#
 
 # plot
 plot <- ggplot(df1, aes(x = date, y = n, fill = confidence_bin)) +
-  geom_stream(type = 'ridge', alpha = 0.7, lwd = 0.25, color = 1) +
+  geom_stream(type = 'ridge', alpha = 0.7, bw = bw, lwd = 0.25, color = 1) +
   labs(y = 'recordings', x = '', fill = 'confidence') +
   scale_x_date(date_labels = "%b %y") +
   scale_fill_manual(values = palette) +

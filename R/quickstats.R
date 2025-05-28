@@ -17,12 +17,11 @@ quickstats <- function(df, confidence = 0){
   # filter by confidence and remove 'nocall'
   df <- df %>% filter(Confidence > confidence, `Common Name` != 'nocall')
 
-
   # list of stats
   stats <- list(
     n_species = length(unique(df$`Common Name`)),
     n_recordings = nrow(df),
-    recording_window = paste0(format(date(substr(min(df$start_time), 1, 10)), '%d %b %y'), " - ", format(date(substr(max(df$start_time), 1, 10)), '%d %b %y')),
+    recording_window = paste0(format(as_date(substr(min(df$start_time), 1, 10)), '%d %b %y'), " - ", format(as_date(substr(max(df$start_time), 1, 10)), '%d %b %y')),
     most_common_bird = df %>%
       group_by(`Common Name`) %>%
       summarise(n = n()) %>%
@@ -51,6 +50,7 @@ quickstats <- function(df, confidence = 0){
     stats[[i]] <- format(stats[[i]])
   }
 
+  # print vertical tibble
   enframe(unlist(stats), name = "statistic", value = "value")
 }
 

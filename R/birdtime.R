@@ -14,7 +14,7 @@
 #'@examples
 #'\dontrun{ birdtime(df, 0.5, c("Galah", "Brown Songlark", "Little Corella")) }
 
-birdtime <- function(df, confidence = 0, bird.names){
+birdtime <- function(df, confidence = 0, bird.names, bw = 0.75){
 
 # pattern for date only
 pattern <- "(\\d{4}-\\d{2}-\\d{2})"
@@ -33,9 +33,9 @@ df1 <- df %>%
 # from the tanagr bird palette package https://github.com/cdanielcadena/tanagR?tab=readme-ov-file
 palette = c("#F6AD4F", "#A45336", "#E6E8DB", "#6CB9A9", "#49A5D6", "#000A1A")
 
-# plot
+# plot - add bw
 plot <- ggplot(df1, aes(x = date, y = n, fill = `Common Name`)) +
-  geom_stream(type = 'ridge', alpha = 0.7, lwd = 0.25, color = 1) +
+  geom_stream(type = 'ridge', alpha = 0.7, bw = bw, lwd = 0.25, color = 1) +
   labs(y = 'recordings', x = '', fill = 'species name') +
   scale_x_date(date_labels = "%b %y") +
   scale_fill_manual(values = palette) +

@@ -1,0 +1,26 @@
+#' Example birdnet dataset
+#'
+#' An example dataset for using functions within the birdnetprocess package
+#'
+#' @format A data frame with 15 columns and 1000 rows
+#' \describe{
+#'   \item{Selection}{Unique ID for each record (integer)}
+#'   \item{View}{Spectrogram value (character)}
+#'   \item{Channel }{Channel number (numeric)}
+#'   \item{Begin Time (s)}{Number of seconds after start_time that recording began (numeric)}
+#'   \item{End Time (s)}{Number of seconds after start_time that recording ended (numeric)}
+#'   \item{Low Freq (Hz)}{Minimum frequency range (numeric)}
+#'   \item{High Freq (Hz)}{Maximum frequency range (numeric)}
+#'   \item{Common Name}{Common name of species (character)}
+#'   \item{Species Code}{Unique species code (character)}
+#'   \item{Confidence}{Confidence level of identification (numeric)}
+#'   \item{Begin Path}{File path to .wav file used for identification (character)}
+#'   \item{File Offset (s)}{Seconds from .wav file start to recording time (numeric)}
+#'   \item{file_name}{File path to .txt file used for df creation (character)}
+#'   \item{start_time}{Start time of file (POSIXct)}
+#'   \item{recording_window_time}{Time of recording start (POSIXct)}
+#' }
+#' @source Example birdnet data
+#' @examples
+#' head(bird_net_data)
+"bird_net_data"
