@@ -48,12 +48,13 @@ palette = c("#FFFFFF", "#FFFFE5", "#F7FCB9", "#D9F0A3", "#ADDD8E", "#78C679", "#
 # plot
 plot <- ggplot(df1, aes(x = date, y = n, fill = confidence_bin)) +
   geom_stream(type = 'ridge', alpha = 0.7, bw = bw, lwd = 0.25, color = 1) +
-  labs(y = 'recordings', x = '', fill = 'confidence') +
+  labs(y = 'Relative frequency', x = '', fill = 'confidence') +
   scale_x_date(date_labels = "%b %y") +
   scale_fill_manual(values = palette) +
   theme_minimal() +
   theme(panel.grid = element_blank(),
-        panel.grid.major = element_line(color = 'grey97'))
+        panel.grid.major = element_line(color = 'grey97'),
+        axis.text.y = element_blank())
 
 return(plot)
 }

@@ -3,6 +3,7 @@
 #'creates a simple line graph showing number of calls over time
 #'@param df the dataframe created by the read_birdnet_file or read_birdnet_folder function
 #'@param confidence the minimum confidence level for the bird call identifications
+#'@param bird.names string of bird names for which recordings over time will be shown
 #'@return a figure showing number of calls over time for the given confidence interval
 #'@export
 #'@import lubridate
@@ -12,7 +13,12 @@
 #'@examples
 #'\dontrun{ quicktime(df, 0.5) }
 
-quicktime <- function(df, confidence = 0){
+quicktime <- function(df, confidence = 0, bird.names = unique(df$`Common Name`)){
+
+# filter by the names included (if left blank, all birds included)
+df <- df %>%
+  filter(`Common Name` != 'nocall' &`Common Name` %in% bird.names)
+
 # pattern for extracting time
 pattern <- "(\\d{4}-\\d{2}-\\d{2})"
 
@@ -40,7 +46,10 @@ plot <- ggplot(df1, aes(x = date, y = n, color = )) +
   theme(panel.grid.minor = element_blank(),
         panel.grid.major = element_line(color = 'grey97'))
 
-cat("recordings between", date_range, " with confidence > ", confidence)
+if (!shiny::isRunning()) {
+  cat("recordings between", date_range, " with confidence > ", confidence)
+  }
+
 return(plot)
 }
 

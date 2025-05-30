@@ -51,6 +51,15 @@ quickstats <- function(df, confidence = 0){
   }
 
   # print vertical tibble
-  enframe(unlist(stats), name = "statistic", value = "value")
+  enframe(unlist(stats), name = "statistic", value = "value") %>%
+    mutate(statistic = recode(statistic,
+                  n_species = "Number of species",
+                  n_recordings = "Number of recordings",
+                  n_recordings = "Number of recordings",
+                  recording_window = "Recording window",
+                  most_common_bird = "Most common bird",
+                  peak_hour = "Peak hour",
+                  av_recordings_per_day = "Average recordings per day",
+                  av_recordings_per_hour = "Average recordings per hour"))
 }
 

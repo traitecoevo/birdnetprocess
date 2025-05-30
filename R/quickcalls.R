@@ -17,7 +17,7 @@ quickcalls <- function(df, confidence = 0, remove.dominants = F){
 
   # filters the dataframe by the confidence given + removes 'nocall'
   df1 <- df %>%
-    filter(Confidence > confidence, `Common Name` != 'nocall') %>%
+    filter(Confidence > confidence & `Common Name` != 'nocall') %>%
     group_by(`Common Name`) %>%
     summarise(n = n()) %>%
     arrange(desc(n))
@@ -45,8 +45,8 @@ quickcalls <- function(df, confidence = 0, remove.dominants = F){
 
     # make colour gradient + diff colour to symbolise dominant species axis
     df1 <- df1 %>%
-      mutate(fill_colour = ifelse(is_dom, "#708090",
-                                  suppressWarnings(scales::col_numeric(palette = c("#a1dab4", "#41b6c4"),
+      mutate(fill_colour = ifelse(is_dom, "red",
+                                  suppressWarnings(scales::col_numeric(palette = c("#ffe6f0", "#ff1493"),
                                                       domain = df1$n_scaled[!df1$is_dom])(n_scaled))))
 
     # plot
@@ -59,8 +59,8 @@ quickcalls <- function(df, confidence = 0, remove.dominants = F){
       labs(y = 'recordings', x = '') +
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 8),
-            axis.text.y.right = element_text(colour = '#708090'),
-            axis.title.y.right = element_text(colour = '#708090', margin = margin(l = 10)),
+            axis.text.y.right = element_text(colour = 'red'),
+            axis.title.y.right = element_text(colour = 'red', margin = margin(l = 10)),
             panel.grid.minor = element_blank(),
             panel.grid.major = element_line(color = 'grey97'),
             panel.grid.major.x = element_blank(),
@@ -69,7 +69,7 @@ quickcalls <- function(df, confidence = 0, remove.dominants = F){
     # plot
     plot <- ggplot(df1, aes(x = reorder(`Common Name`, n), y = n_scaled, fill = n)) +
       geom_bar(stat = 'identity') +
-      scale_fill_gradient(low = "#a1dab4", high = "#41b6c4", guide = 'none') +
+      scale_fill_gradient(low = "#ffe6f0", high = "#ff1493", guide = 'none') +
       scale_y_continuous(expand = expansion(mult = c(0, 0.1)), # remove space below x axis
                          name = "recordings") +
       labs(y = 'recordings', x = '') +
@@ -104,7 +104,7 @@ quickcalls <- function(df, confidence = 0, remove.dominants = F){
     # plot
     plot <- ggplot(df1, aes(x = reorder(`Common Name`, n), y = n_scaled, fill = n)) +
       geom_bar(stat = 'identity') +
-      scale_fill_gradient(low = "#a1dab4", high = "#41b6c4", guide = 'none') +
+      scale_fill_gradient(low = "#ffe6f0", high = "#ff1493", guide = 'none') +
       scale_y_continuous(expand = expansion(mult = c(0, 0.1)), # remove space below x axis
                          name = "recordings") +
       labs(y = 'recordings', x = '') +
@@ -116,8 +116,10 @@ quickcalls <- function(df, confidence = 0, remove.dominants = F){
             axis.title.x.bottom = element_text(hjust = 0.5, size = 10, margin = margin(t = 10)))
 
 }
-  cat("recordings between", date_range, " with confidence > ", confidence)
+  if (!shiny::isRunning()) {
+    cat("recordings between", date_range, " with confidence > ", confidence)
+  }
   return(plot)
 
-}
 
+}
