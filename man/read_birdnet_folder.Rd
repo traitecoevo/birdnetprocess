@@ -31,7 +31,7 @@ Read all BirdNET selection files in a folder
 }
 \examples{
 \dontrun{
-  all_detections <- read_birdnet_folder("path/to/folder")
-  dplyr::glimpse(all_detections)
+all_detections <- read_birdnet_folder("path/to/folder")
+dplyr::glimpse(all_detections)
 }
 }

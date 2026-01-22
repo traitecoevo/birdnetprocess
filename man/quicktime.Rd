@@ -4,12 +4,14 @@
 \alias{quicktime}
 \title{quick time}
 \usage{
-quicktime(df, confidence = 0)
+quicktime(df, confidence = 0, bird.names = unique(df$`Common Name`))
 }
 \arguments{
 \item{df}{the dataframe created by the read_birdnet_file or read_birdnet_folder function}
 
 \item{confidence}{the minimum confidence level for the bird call identifications}
+
+\item{bird.names}{string of bird names for which recordings over time will be shown}
 }
 \value{
 a figure showing number of calls over time for the given confidence interval

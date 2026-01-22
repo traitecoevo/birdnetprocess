@@ -4,7 +4,7 @@
 \alias{birdtime}
 \title{bird time}
 \usage{
-birdtime(df, confidence = 0, bird.names, bw = 0.75)
+birdtime(df, confidence = 0, bird.names = unique(df$`Common Name`), bw = 0.75)
 }
 \arguments{
 \item{df}{the dataframe created by the read_birdnet_file or read_birdnet_folder function}
@@ -12,6 +12,8 @@ birdtime(df, confidence = 0, bird.names, bw = 0.75)
 \item{confidence}{the minimum confidence level for the bird call identifications}
 
 \item{bird.names}{one to six bird names, to view comparative prevalence over time/seasons}
+
+\item{bw}{the bandwidth for the kernel density estimation performed by the streamgraph}
 }
 \value{
 a plot showing calls over time for each species input

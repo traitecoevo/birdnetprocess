@@ -25,7 +25,7 @@ Read a single BirdNET selection table file
 }
 \examples{
 \dontrun{
-  df <- read_birdnet_file("1STSMM2_20241105_050000.BirdNET.selection.table.txt")
-  head(df)
+df <- read_birdnet_file("1STSMM2_20241105_050000.BirdNET.selection.table.txt")
+head(df)
 }
 }
