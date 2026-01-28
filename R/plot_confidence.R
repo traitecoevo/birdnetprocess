@@ -11,12 +11,16 @@
 #' @import lubridate
 #' @import dplyr
 #' @import ggplot2
-#' @import ggstream
 #' @examples
 #' \dontrun{
 #' plot_confidence(df, confidence = 0)
 #' }
 plot_confidence <- function(df, confidence = 0, bw = 0.75) {
+  # check for ggstream
+  if (!requireNamespace("ggstream", quietly = TRUE)) {
+    stop("Package \"ggstream\" needed for this function to work. Please install it.")
+  }
+
   # mutate confidence into bins
   df <- df |>
     dplyr::mutate(confidence_bin = dplyr::case_when(
@@ -36,10 +40,8 @@ plot_confidence <- function(df, confidence = 0, bw = 0.75) {
   pattern <- "(\\d{4}-\\d{2}-\\d{2})"
 
   # extract date
-  df$date <- df$start_time |>
-    format() |>
-    stringr::str_extract(pattern = pattern) |>
-    lubridate::date()
+  matches <- regmatches(format(df$start_time), regexpr(pattern, format(df$start_time)))
+  df$date <- as.Date(matches)
 
   # filter out no call, filter by confidence (default is 0)
   df1 <- df |>

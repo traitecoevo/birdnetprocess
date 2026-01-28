@@ -182,7 +182,7 @@ plot_species_counts <- function(df, confidence = 0, remove.dominants = FALSE) {
         )
       )
   }
-  if (!shiny::isRunning()) {
+  if (interactive()) {
     cat("recordings between", date_range, " with confidence > ", confidence)
   }
   plot

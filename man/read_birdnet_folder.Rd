@@ -6,25 +6,21 @@
 \usage{
 read_birdnet_folder(
   folder = ".",
-  pattern = "BirdNET.selection.table.txt$",
+  pattern = "BirdNET.*\\\\.(txt|csv)$",
   recursive = FALSE
 )
 }
 \arguments{
-\item{folder}{A folder path containing BirdNET .selection.table.txt files}
+\item{folder}{A folder path containing BirdNET files.}
 
 \item{pattern}{A regex pattern to match the files.
-Default is "BirdNET.selection.table.txt$", meaning any file ending with that.}
+Default matches \code{.txt} or \code{.csv} files that look like BirdNET outputs.
+e.g. "BirdNET.*\\.(txt|csv)$"}
 
 \item{recursive}{Whether to search recursively in subfolders. Default FALSE.}
 }
 \value{
-A single tibble combining all data from the matched files,
-with columns:
-- all columns from each BirdNET file
-- \code{file_name}
-- \code{start_time}
-- \code{recording_window_time}
+A single tibble combining all data.
 }
 \description{
 Read all BirdNET selection files in a folder
@@ -32,6 +28,5 @@ Read all BirdNET selection files in a folder
 \examples{
 \dontrun{
 all_detections <- read_birdnet_folder("path/to/folder")
-dplyr::glimpse(all_detections)
 }
 }

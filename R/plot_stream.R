@@ -10,8 +10,6 @@
 #' @import lubridate
 #' @import dplyr
 #' @import ggplot2
-#' @import ggstream
-#' @import stringr
 #' @examples
 #' \dontrun{
 #' plot_species_stream(df, 0.5, c("Galah", "Brown Songlark", "Little Corella"))
@@ -22,10 +20,12 @@ plot_species_stream <- function(df, confidence = 0,
   # pattern for date only
   pattern <- "(\\d{4}-\\d{2}-\\d{2})"
 
-  # new column for date only, format to revert to character,
-  df$date <- df$start_time %>%
-    stringr::str_extract(pattern = pattern) %>%
-    date()
+  # new column for date only, format to revert to character
+  # Base R equivalent of str_extract
+  matches <- regmatches(df$start_time, regexpr(pattern, df$start_time))
+  # Handle potential no-matches (though inputs should have valid times)
+  # regexpr returns -1 if no match.
+  df$date <- as.Date(matches)
 
   df1 <- df %>%
     filter(Confidence > confidence, `Common Name` %in% bird.names) %>%
@@ -37,6 +37,10 @@ plot_species_stream <- function(df, confidence = 0,
   palette <- c("#F6AD4F", "#A45336", "#E6E8DB", "#6CB9A9", "#49A5D6", "#000A1A")
 
   # plot - add bw
+  if (!requireNamespace("ggstream", quietly = TRUE)) {
+    stop("Package \"ggstream\" needed for this function to work. Please install it.")
+  }
+
   plot <- ggplot(df1, aes(x = date, y = n, fill = `Common Name`)) +
     ggstream::geom_stream(type = "ridge", alpha = 0.7, bw = bw, lwd = 0.25, color = 1) +
     labs(y = "Relative frequency", x = "", fill = "species name") +

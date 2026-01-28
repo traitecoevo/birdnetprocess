@@ -7,10 +7,9 @@
 read_birdnet_file(file_path, tz = "UTC")
 }
 \arguments{
-\item{file_path}{Path to a BirdNET .selection.table.txt file}
+\item{file_path}{Path to a BirdNET file (either tab-delimited Raven selection table or CSV).}
 
-\item{tz}{Timezone if you want to override or specify a different timezone
-than what is parsed from the filename (if any). Default "UTC".}
+\item{tz}{Timezone to be used for the start time. Default "UTC".}
 }
 \value{
 A tibble with all columns from the BirdNET file plus:
@@ -23,9 +22,27 @@ A tibble with all columns from the BirdNET file plus:
 \description{
 Read a single BirdNET selection table file
 }
+\details{
+The function attempts to read the file based on its extension.
+\itemize{
+\item Ends in \code{.csv} or \code{.CSV}: reads as comma-separated.
+\item Otherwise: reads as tab-separated (Raven selection table default).
+}
+
+It also standardizes the start time column:
+\itemize{
+\item If \verb{Begin Time (s)} exists (Raven), it is used.
+\item If \code{Start (s)} exists (CSV), it is renamed to \verb{Begin Time (s)} internally (or standardizing to \code{begin_time_s}).
+}
+
+Filenames must ideally follow the pattern \code{YYYYMMDD_HHMMSS} to allow automatic \code{start_time} parsing.
+}
 \examples{
 \dontrun{
-df <- read_birdnet_file("1STSMM2_20241105_050000.BirdNET.selection.table.txt")
-head(df)
+# Read a Raven selection table
+df_raven <- read_birdnet_file("data/SiteA_20240101_120000.BirdNET.selection.table.txt")
+
+# Read a CSV
+df_csv <- read_birdnet_file("data/SiteA_20240101_120000.BirdNET.results.csv")
 }
 }

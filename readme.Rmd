@@ -45,7 +45,10 @@ This will:
 * Standardize column names (e.g., `Begin Time (s)`).
 * Add `start_time` and `recording_window_time` columns.
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
+library(birdnetprocess)
+library(dplyr)
+
 # Use example data included in the package
 raven_path <- system.file("extdata", "example_raven.txt", package = "birdnetprocess")
 csv_path <- system.file("extdata", "example_birdnet.csv", package = "birdnetprocess")
@@ -86,6 +89,31 @@ Visualize species counts:
 birdnetprocess::plot_species_counts(df_raven, confidence = 0.5)
 ```
 ![Top 10 Calls](analysis/plots/top10_calls_over_time_package.png)
+
+### 5. Visualizing Daily Patterns (Day/Night)
+
+You can visualize daily activity patterns with day/night shading (using the `suncalc` package).
+Note that you must provide the latitude, longitude, and timezone for the shading to work.
+
+```r
+library(birdnetprocess)
+
+# Read data
+data <- read_birdnet_folder("path/to/detections_SL21", recursive = FALSE)
+
+# Generate plot with day/night shading
+# Example coordinates for Sydney region
+birdnetprocess::plot_top_species(
+  data,
+  n_top_species = 10,
+  confidence = 0.5,
+  latitude = -32.44,   # Required for suncalc
+  longitude = 152.24,  # Required for suncalc
+  tz = "Australia/Sydney"
+)
+```
+
+![Day Night Patterns](analysis/plots/day_night_stream.png)
 
 
 If you have a folder full of BirdNET files, use `read_birdnet_folder()` to read them all at once.

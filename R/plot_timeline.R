@@ -9,7 +9,7 @@
 #' @import lubridate
 #' @import dplyr
 #' @import ggplot2
-#' @import stringr
+#' @import ggplot2
 #' @examples
 #' \dontrun{
 #' plot_timeline(df, 0.5)
@@ -23,10 +23,8 @@ plot_timeline <- function(df, confidence = 0, bird.names = unique(df$`Common Nam
   pattern <- "(\\d{4}-\\d{2}-\\d{2})"
 
   # single out date only
-  df$date <- df$start_time %>%
-    format() %>%
-    stringr::str_extract(pattern = pattern) %>%
-    date()
+  matches <- regmatches(format(df$start_time), regexpr(pattern, format(df$start_time)))
+  df$date <- as.Date(matches)
 
   date_range <- paste(format(lubridate::date(min(df$start_time)), "%d %B %Y"), " - ", format(date(max(df$start_time)), "%d %B %Y"))
 
@@ -50,7 +48,7 @@ plot_timeline <- function(df, confidence = 0, bird.names = unique(df$`Common Nam
       panel.grid.major = element_line(color = "grey97")
     )
 
-  if (!shiny::isRunning()) {
+  if (interactive()) {
     cat("recordings between", date_range, " with confidence > ", confidence)
   }
 

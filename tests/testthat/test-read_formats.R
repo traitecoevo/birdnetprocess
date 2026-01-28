@@ -1,4 +1,3 @@
-devtools::load_all(".")
 test_that("read_birdnet_file handles Raven TXT and CSV", {
     # Paths to example data
     raven_path <- system.file("extdata", "example_raven.txt", package = "birdnetprocess")

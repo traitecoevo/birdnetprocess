@@ -14,11 +14,20 @@ parse_birdnet_filename_datetime <- function(file_name) {
   #    We'll do so with a regex capturing group
   #    We'll look for digits_ digits, i.e. something like 20241105_050000
   pattern <- "(\\d{8}_\\d{6})"
-  match <- stringr::str_match(file_name, pattern)[, 2] # first capturing group
 
-  if (is.na(match)) {
+  # Use regexec/regmatches instead of stringr::str_match
+  match_data <- regexec(pattern, file_name)
+  match_result <- regmatches(file_name, match_data)
+
+  if (length(match_result[[1]]) == 0) {
     stop("Filename does not match the expected pattern YYYYMMDD_HHMMSS.")
   }
+
+  # The first element is the full match, second is the capturing group
+  # However, since our pattern is just the capturing group, full match == group.
+  # But regexec returns full match at index 1 and groups at 2+.
+  # Let's just use the full match if it found it.
+  match <- match_result[[1]][1]
 
   # 2) We have a string like "20241105_050000"
   #    Let's split it at the underscore.
@@ -165,7 +174,9 @@ read_birdnet_folder <- function(folder = ".",
   }
 
   # read them all, combining into one data frame
-  purrr::map_dfr(files, ~ read_birdnet_file(.x))
+  # Replace purrr::map_dfr with lapply + dplyr::bind_rows
+  data_list <- lapply(files, read_birdnet_file)
+  dplyr::bind_rows(data_list)
 }
 
 #' Read BirdNET selection files from multiple sites (folders)
@@ -199,5 +210,7 @@ read_birdnet_sites <- function(folder_paths,
   }
 
   # Read all and combine
-  purrr::map_dfr(folder_paths, read_one_site)
+  # Replace purrr::map_dfr with lapply + dplyr::bind_rows
+  data_list <- lapply(folder_paths, read_one_site)
+  dplyr::bind_rows(data_list)
 }

@@ -1,11 +1,11 @@
 Package: birdnetprocess
-Title: Process and visualize results soundscape analysis via the birdnet family of models
+Title: Process and Visualize 'BirdNET' Audio Classification Results
 Version: 0.0.0.9000
 Authors@R: c(
     person("Will", "Cornwell", email = "wcornwell@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4080-4073")),
     person("Adele", "Gemmell", role = c("aut")))
-Description: Provides tools to read, process, and visualize audio classification results from BirdNET. Includes functions for reading single or multiple result files, combining detections, calculating confidence statistics, and generating visualizations of call activity over time.
+Description: Toolbox for processing and visualizing audio classification output from 'BirdNET'. Functionality includes reading and standardizing data from 'Raven' selection tables and CSV files, summarizing species detections, and creating time-series visualizations of vocal activity. It offers a lightweight workflow for ecoacoustic analysis.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -14,18 +14,13 @@ LazyData: true
 Depends:
     R (>= 4.1.0),
 Imports:
-    stringr,
     lubridate,
     dplyr,
     readr,
-    purrr,
-    ggstream,
     tibble,
     ggplot2,
-    suncalc,
     scales,
     rlang,
-    shiny,
     tidyr
 Remotes:
     davidsjoberg/ggstream
@@ -33,4 +28,6 @@ Suggests:
     covr,
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    ggstream,
+    suncalc

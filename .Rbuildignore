@@ -5,3 +5,4 @@
 ^README.md$
 ^detections_.*$
 ^readme.Rmd$
+^readme_files$
