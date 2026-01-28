@@ -178,6 +178,15 @@ read_birdnet_folder <- function(folder = ".",
     return(dplyr::tibble())
   }
 
+  # Exclude known non-detection files (like BirdNET_analysis_params.csv)
+  # Filter out files containing "analysis_params" or "config" (case insensitive)
+  files <- files[!grepl("analysis_params|config", basename(files), ignore.case = TRUE)]
+
+  if (length(files) == 0) {
+    warning("No valid detection files found (after filtering out config/params files).")
+    return(dplyr::tibble())
+  }
+
   # read them all, combining into one data frame
   # Replace purrr::map_dfr with lapply + dplyr::bind_rows
   data_list <- lapply(files, read_birdnet_file)

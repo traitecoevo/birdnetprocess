@@ -96,7 +96,7 @@ data <- read_birdnet_folder("detections_SL21", recursive = FALSE)
 Get a summary of your dataset:
 
 ```{r, eval=FALSE}
-birdnetprocess::summarise_detections(data, confidence = 0.5)
+birdnetprocess::summarise_detections(data, confidence = 0.7)
 # # A tibble: 7 × 2
 #   statistic                   value
 #   <chr>                       <chr>
@@ -105,8 +105,8 @@ birdnetprocess::summarise_detections(data, confidence = 0.5)
 # 3 Recording window            18 Jan 26 - 19 Jan 26
 # 4 Most common species           Black Field Cricket
 # 5 Peak hour                   2026-01-19 04:21:02
-# 6 Average recordings per day  4021
-# 7 Average recordings per hour 178.7111
+# 6 Average detections per day  4021
+# 7 Average detections per hour 178.7111
 ```
 
 **Quick Calls**
@@ -129,7 +129,7 @@ Note that you must provide the latitude, longitude, and timezone for the shading
 birdnetprocess::plot_top_species(
   data,
   n_top_species = 10,
-  confidence = 0.5,
+  confidence = 0.6,
   latitude = -32.44, # Required for suncalc
   longitude = 152.24, # Required for suncalc
   tz = "Australia/Sydney"

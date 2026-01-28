@@ -19,7 +19,7 @@ results which can be overwhelming in their volume.
 ``` r
 # install.packages("devtools") # if needed
 devtools::install_github("traitecoevo/birdnetprocess")
-#> Skipping install of 'birdnetprocess' from a github remote, the SHA1 (18ce478b) has not changed since last install.
+#> Skipping install of 'birdnetprocess' from a github remote, the SHA1 (ad9b8330) has not changed since last install.
 #>   Use `force = TRUE` to force installation
 ```
 
@@ -113,7 +113,7 @@ data <- read_birdnet_folder("detections_SL21", recursive = FALSE)
 Get a summary of your dataset:
 
 ``` r
-birdnetprocess::summarise_detections(data, confidence = 0.5)
+birdnetprocess::summarise_detections(data, confidence = 0.7)
 # # A tibble: 7 × 2
 #   statistic                   value
 #   <chr>                       <chr>
@@ -122,8 +122,8 @@ birdnetprocess::summarise_detections(data, confidence = 0.5)
 # 3 Recording window            18 Jan 26 - 19 Jan 26
 # 4 Most common species           Black Field Cricket
 # 5 Peak hour                   2026-01-19 04:21:02
-# 6 Average recordings per day  4021
-# 7 Average recordings per hour 178.7111
+# 6 Average detections per day  4021
+# 7 Average detections per hour 178.7111
 ```
 
 **Quick Calls**
@@ -152,7 +152,7 @@ longitude, and timezone for the shading to work.
 birdnetprocess::plot_top_species(
   data,
   n_top_species = 10,
-  confidence = 0.5,
+  confidence = 0.6,
   latitude = -32.44, # Required for suncalc
   longitude = 152.24, # Required for suncalc
   tz = "Australia/Sydney"

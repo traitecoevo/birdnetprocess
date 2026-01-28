@@ -31,7 +31,7 @@ test_that("summarise_detections calculates stats correctly", {
     expect_equal(get_val("Number of species"), "2")
     expect_equal(get_val("Number of recordings"), "5")
     expect_equal(get_val("Most common species"), "Robin")
-    expect_equal(get_val("Average recordings per day"), "2.5")
+    expect_equal(get_val("Average detections per day"), "2.5")
 
     # Check date range string
     expect_true(grepl("01 Jan 24", get_val("Recording window")))

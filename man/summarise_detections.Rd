@@ -4,22 +4,43 @@
 \alias{summarise_detections}
 \title{Summarise Detections}
 \usage{
-summarise_detections(df, confidence = 0)
+summarise_detections(df, confidence = 0.5)
 }
 \arguments{
-\item{df}{The dataframe created by the read_birdnet_file or read_birdnet_folder function.}
+\item{df}{A dataframe of BirdNET results, typically created by
+\code{\link{read_birdnet_file}} or \code{\link{read_birdnet_folder}}.}
 
-\item{confidence}{The minimum confidence level for the bird call identifications.}
+\item{confidence}{Numeric. The minimum confidence level (0 to 1) for a detection
+to be included in the summary. Default is 0.5.}
 }
 \value{
-A tibble of summary statistics.
+A tibble with columns \code{statistic} and \code{value}.
 }
 \description{
-Takes BirdNET results and offers a few quick statistics.
+Provides a quick summary of BirdNET results, including species counts,
+total recordings, time range, and average detection rates.
+}
+\details{
+This function filters the input data based on the provided confidence threshold
+and then calculates several summary statistics:
+\itemize{
+\item Number of unique species detected
+\item Total number of detections (recordings)
+\item Date range of the recording window
+\item The most frequently detected species
+\item The peak hour of activity
+\item Average number of detections per day
+\item Average number of detections per hour
+}
+It returns a tibble with two columns: \code{statistic} (the name of the metric)
+and \code{value} (the calculated value formatted as a string).
 }
 \examples{
 \dontrun{
-summarise_detections(df, 0.5)
-}
+# Summarise with default confidence (0.5)
+summarise_detections(df)
 
+# Summarise with higher confidence threshold
+summarise_detections(df, confidence = 0.8)
+}
 }

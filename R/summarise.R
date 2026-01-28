@@ -1,20 +1,41 @@
 #' @title Summarise Detections
 #' @description
-#' Takes BirdNET results and offers a few quick statistics.
+#' Provides a quick summary of BirdNET results, including species counts,
+#' total recordings, time range, and average detection rates.
 #'
-#' @param df The dataframe created by the read_birdnet_file or read_birdnet_folder function.
-#' @param confidence The minimum confidence level for the bird call identifications.
-#' @return A tibble of summary statistics.
+#' @details
+#' This function filters the input data based on the provided confidence threshold
+#' and then calculates several summary statistics:
+#' \itemize{
+#'   \item Number of unique species detected
+#'   \item Total number of detections (recordings)
+#'   \item Date range of the recording window
+#'   \item The most frequently detected species
+#'   \item The peak hour of activity
+#'   \item Average number of detections per day
+#'   \item Average number of detections per hour
+#' }
+#' It returns a tibble with two columns: `statistic` (the name of the metric)
+#' and `value` (the calculated value formatted as a string).
+#'
+#' @param df A dataframe of BirdNET results, typically created by
+#'        \code{\link{read_birdnet_file}} or \code{\link{read_birdnet_folder}}.
+#' @param confidence Numeric. The minimum confidence level (0 to 1) for a detection
+#'        to be included in the summary. Default is 0.5.
+#' @return A tibble with columns `statistic` and `value`.
 #' @export
 #' @import tibble
 #' @import lubridate
 #' @import dplyr
 #' @examples
 #' \dontrun{
-#' summarise_detections(df, 0.5)
-#' }
+#' # Summarise with default confidence (0.5)
+#' summarise_detections(df)
 #'
-summarise_detections <- function(df, confidence = 0) {
+#' # Summarise with higher confidence threshold
+#' summarise_detections(df, confidence = 0.8)
+#' }
+summarise_detections <- function(df, confidence = 0.5) {
   # filter by confidence and remove 'nocall'
   df <- df %>% filter(Confidence > confidence, `Common Name` != "nocall")
 
@@ -60,7 +81,7 @@ summarise_detections <- function(df, confidence = 0) {
       recording_window = "Recording window",
       most_common_bird = "Most common species",
       peak_hour = "Peak hour",
-      av_recordings_per_day = "Average recordings per day",
-      av_recordings_per_hour = "Average recordings per hour"
+      av_recordings_per_day = "Average detections per day",
+      av_recordings_per_hour = "Average detections per hour"
     ))
 }
