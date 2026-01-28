@@ -4,17 +4,21 @@
 \alias{quickcalls}
 \title{quick calls}
 \usage{
-quickcalls(df, confidence = 0, remove.dominants = F)
+quickcalls(df, confidence = 0, remove.dominants = FALSE)
 }
 \arguments{
-\item{df}{the dataframe created by the read_birdnet_file or read_birdnet_folder function}
+\item{df}{the dataframe created by the read_birdnet_file or
+read_birdnet_folder function}
 
-\item{confidence}{the minimum confidence level for the bird call identifications}
+\item{confidence}{the minimum confidence level for the bird call
+identifications}
 
-\item{remove.dominants}{removes dominant species from plot for cleaner visualisation}
+\item{remove.dominants}{removes dominant species from plot for cleaner
+visualisation}
 }
 \value{
-a plot showing the number of calls per bird species + prints removed species if applicable
+a plot showing the number of calls per bird species + prints removed
+species if applicable
 }
 \description{
 takes birdnet .txt data creates a figure representing number of recordings of
