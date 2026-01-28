@@ -7,3 +7,4 @@
 ^readme.Rmd$
 ^readme_files$
 ^readme\.html$
+^rebuild_readme_plots\.R$

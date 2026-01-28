@@ -4,7 +4,12 @@
 \alias{plot_species_counts}
 \title{Plot Species Counts}
 \usage{
-plot_species_counts(df, confidence = 0, remove.dominants = FALSE)
+plot_species_counts(
+  df,
+  confidence = 0,
+  remove.dominants = FALSE,
+  log.scale = TRUE
+)
 }
 \arguments{
 \item{df}{The dataframe created by the read_birdnet_file or
@@ -13,7 +18,10 @@ read_birdnet_folder function}
 \item{confidence}{The minimum confidence level for the species identifications}
 
 \item{remove.dominants}{Removes dominant species from plot for cleaner
-visualisation}
+visualisation (deprecated if log.scale is TRUE)}
+
+\item{log.scale}{Logical. If TRUE (default), uses a log10 scale for the y-axis,
+which handles dominant species visualization automatically.}
 }
 \value{
 A plot showing the number of calls per species + prints removed

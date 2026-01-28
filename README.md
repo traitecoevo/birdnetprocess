@@ -19,7 +19,7 @@ results which can be overwhelming in their volume.
 ``` r
 # install.packages("devtools") # if needed
 devtools::install_github("traitecoevo/birdnetprocess")
-#> Skipping install of 'birdnetprocess' from a github remote, the SHA1 (77cbcde6) has not changed since last install.
+#> Skipping install of 'birdnetprocess' from a github remote, the SHA1 (18ce478b) has not changed since last install.
 #>   Use `force = TRUE` to force installation
 ```
 
@@ -77,7 +77,7 @@ head(df_raven)
 #> #   recording_window_time <dttm>
 head(df_csv)
 #> # A tibble: 2 × 9
-#>   begin_time_s end_time_s `Scientific name`  `Common name`  Confidence
+#>   begin_time_s end_time_s `Scientific name`  `Common Name`  Confidence
 #>          <dbl>      <dbl> <chr>              <chr>               <dbl>
 #> 1          1.5        4.5 Turdus migratorius American Robin       0.95
 #> 2          5          8   Melospiza melodia  Song Sparrow         0.9 

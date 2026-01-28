@@ -69,7 +69,7 @@ test_that("plot_species_counts handles remove.dominants = TRUE", {
 
     # Capture output to check for print message
     expect_output(
-        p <- plot_species_counts(df, confidence = 0.5, remove.dominants = TRUE),
+        p <- plot_species_counts(df, confidence = 0.5, remove.dominants = TRUE, log.scale = FALSE),
         "Dominant species removed"
     )
 
