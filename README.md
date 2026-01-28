@@ -1,40 +1,53 @@
+birdnetprocess
+================
+Will Cornwell
+2026-01-28
 
 # birdnetprocess
 
 <!-- badges: start -->
+
 [![R-CMD-check](https://github.com/traitecoevo/birdnetprocess/actions/workflows/check-standard.yaml/badge.svg)](https://github.com/traitecoevo/birdnetprocess/actions/workflows/check-standard.yaml)
 [![test-coverage](https://github.com/traitecoevo/birdnetprocess/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/traitecoevo/birdnetprocess/actions/workflows/test-coverage.yaml)
 <!-- badges: end -->
 
-`birdnetprocess` helps you process and visualize BirdNET detection results.
+`birdnetprocess` helps you process and visualize BirdNET detection
+results.
 
 ## Install
 
-```r
+``` r
 # install.packages("devtools") # if needed
 devtools::install_github("traitecoevo/birdnetprocess")
+#> Skipping install of 'birdnetprocess' from a github remote, the SHA1 (94eebbb8) has not changed since last install.
+#>   Use `force = TRUE` to force installation
 ```
 
 ## Example Usage
+
 #### 1. Extract Start DateTime from a BirdNET Filename
 
-The function parse_birdnet_filename_datetime() assumes filenames follow this pattern:
+The function parse_birdnet_filename_datetime() assumes filenames follow
+this pattern:
 
 `SOMETHING_YYYYMMDD_HHMMSS.BirdNET.selection.table.txt`
 
-```r
+``` r
 library(birdnetprocess)
 library(dplyr)
 ```
 
 ### Extract a start date-time from a BirdNET filename
-```r
+
+``` r
 parsed_time <- birdnetprocess::parse_birdnet_filename_datetime(
   "1STSMM2_20241105_050000.BirdNET.selection.table.txt"
 )
 parsed_time
+#> [1] "2024-11-05 05:00:00 UTC"
 ```
-Expected output is a POSIXct datetime (e.g., "2024-11-05 05:00:00 UTC").
+
+Expected output is a POSIXct datetime (e.g., “2024-11-05 05:00:00 UTC”).
 
 #### 2. Read a Single BirdNET File
 
@@ -46,27 +59,82 @@ Use read_birdnet_file() to read one BirdNET selection table. This will:
         file_name
         start_time
         recording_window_time, which is start_time + [Begin Time (s)].
-```r
-# Suppose you have a BirdNET file at this path:
-birdnet_file <- "ignore/cc_output/1STSMM2_20241105_050000.BirdNET.selection.table.txt"
 
-df_single <- read_birdnet_file(birdnet_file)
+``` r
+# Create a dummy BirdNET file for demonstration
+birdnet_data <- "Selection\tView\tChannel\tBegin Time (s)\tEnd Time (s)\tLow Freq (Hz)\tHigh Freq (Hz)\tCommon Name\tSpecies Code\tConfidence\n1\tSpectrogram 1\t1\t1.5\t4.5\t150\t8000\tAmerican Robin\tAMRO\t0.95\n2\tSpectrogram 1\t1\t5.0\t8.0\t150\t8000\tSong Sparrow\tSOSP\t0.90"
+birdnet_file <- tempfile(pattern = "BirdNET_example_", fileext = ".txt")
+writeLines(birdnet_data, birdnet_file)
+
+# We need a filename that matches the pattern for the time parser function to work automatically
+# Or we can just demonstrate the reading part.
+# Let's mock a compliant filename for the full demonstration.
+compliant_name <- "SiteA_20240101_120000.BirdNET.selection.table.txt"
+compliant_path <- file.path(tempdir(), compliant_name)
+writeLines(birdnet_data, compliant_path)
+
+df_single <- read_birdnet_file(compliant_path)
 head(df_single)
+#> # A tibble: 2 × 13
+#>   Selection View          Channel begin_time_s `End Time (s)` `Low Freq (Hz)`
+#>       <dbl> <chr>           <dbl>        <dbl>          <dbl>           <dbl>
+#> 1         1 Spectrogram 1       1          1.5            4.5             150
+#> 2         2 Spectrogram 1       1          5              8               150
+#> # ℹ 7 more variables: `High Freq (Hz)` <dbl>, `Common Name` <chr>,
+#> #   `Species Code` <chr>, Confidence <dbl>, file_name <chr>, start_time <dttm>,
+#> #   recording_window_time <dttm>
 ```
+
 Note:
 
     Ensure the file’s “Begin Time (s)” column name matches the one you expect in your BirdNET exports.
     You can specify a timezone via the tz argument if needed.
 
+#### 4. Quick Visualization and Statistics
 
-#### 3. Read All BirdNET Files in a Folder
+`plot_species_counts` and `summarise_detections` provide immediate
+insights into your data.
 
+**Quick Stats** Get a summary of your dataset:
 
-If you have a folder full of BirdNET .selection.table.txt files, use read_birdnet_folder() to read them all at once. It will return a single combined tibble.
-```r
+``` r
+# Use the single file dataframe for demonstration
+birdnetprocess::summarise_detections(df_single, confidence = 0.5)
+#> # A tibble: 7 × 2
+#>   statistic                   value                
+#>   <chr>                       <chr>                
+#> 1 Number of species           2                    
+#> 2 Number of recordings        2                    
+#> 3 Recording window            01 Jan 24 - 01 Jan 24
+#> 4 Most common bird            American Robin       
+#> 5 Peak hour                   2024-01-01 12:00:00  
+#> 6 Average recordings per day  2                    
+#> 7 Average recordings per hour 2
+```
+
+**Quick Calls** Visualize species counts:
+
+``` r
+birdnetprocess::plot_species_counts(df_single, confidence = 0.5)
+#> recordings between 01 January 2024 - 01 January 2024  with confidence >  0.5
+```
+
+![](readme_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+<figure>
+<img src="analysis/plots/top10_calls_over_time_package.png"
+alt="Top 10 Calls" />
+<figcaption aria-hidden="true">Top 10 Calls</figcaption>
+</figure>
+
+If you have a folder full of BirdNET .selection.table.txt files, use
+read_birdnet_folder() to read them all at once. It will return a single
+combined tibble.
+
+``` r
 # Read all BirdNET files in a directory and combine into one data frame
 all_detections <- read_birdnet_folder(
-  folder = "ignore/cc_output/",
+  folder = "path/to/your/detections/",
   pattern = "BirdNET.selection.table.txt$",
   recursive = FALSE
 )
@@ -74,28 +142,7 @@ all_detections <- read_birdnet_folder(
 dplyr::glimpse(all_detections)
 ```
 
-Then you can proceed to filter or process as needed for the project. 
-
-#### 4. Quick Visualization and Statistics
-
-`quickcalls` and `quickstats` provide immediate insights into your data.
-
-**Quick Stats**
-Get a summary of your dataset:
-
-```r
-birdnetprocess::quickstats(all_detections, confidence = 0.5)
-```
-
-**Quick Calls**
-Visualize species counts:
-
-```r
-birdnetprocess::quickcalls(all_detections, confidence = 0.5)
-```
-
-![Top 10 Calls](analysis/plots/top10_calls_over_time_package.png)
-
+Then you can proceed to filter or process as needed for the project.
 
 ### Dependencies
 
@@ -106,5 +153,5 @@ Under the hood, `birdnetprocess` uses:
     - `readr` for reading tab-delimited text files.
     - `dplyr` and `purrr` for data manipulation.
 
-These packages should be installed automatically when installing `birdnetprocess` from GitHub.
-
+These packages should be installed automatically when installing
+`birdnetprocess` from GitHub.

@@ -60,10 +60,19 @@ Use read_birdnet_file() to read one BirdNET selection table. This will:
         start_time
         recording_window_time, which is start_time + [Begin Time (s)].
 ```{r}
-# Suppose you have a BirdNET file at this path:
-birdnet_file <- "ignore/cc_output/1STSMM2_20241105_050000.BirdNET.selection.table.txt"
+# Create a dummy BirdNET file for demonstration
+birdnet_data <- "Selection\tView\tChannel\tBegin Time (s)\tEnd Time (s)\tLow Freq (Hz)\tHigh Freq (Hz)\tCommon Name\tSpecies Code\tConfidence\n1\tSpectrogram 1\t1\t1.5\t4.5\t150\t8000\tAmerican Robin\tAMRO\t0.95\n2\tSpectrogram 1\t1\t5.0\t8.0\t150\t8000\tSong Sparrow\tSOSP\t0.90"
+birdnet_file <- tempfile(pattern = "BirdNET_example_", fileext = ".txt")
+writeLines(birdnet_data, birdnet_file)
 
-df_single <- read_birdnet_file(birdnet_file)
+# We need a filename that matches the pattern for the time parser function to work automatically
+# Or we can just demonstrate the reading part.
+# Let's mock a compliant filename for the full demonstration.
+compliant_name <- "SiteA_20240101_120000.BirdNET.selection.table.txt"
+compliant_path <- file.path(tempdir(), compliant_name)
+writeLines(birdnet_data, compliant_path)
+
+df_single <- read_birdnet_file(compliant_path)
 head(df_single)
 ```
 Note:
@@ -74,20 +83,21 @@ Note:
 
 #### 4. Quick Visualization and Statistics
 
-`quickcalls` and `quickstats` provide immediate insights into your data.
+`plot_species_counts` and `summarise_detections` provide immediate insights into your data.
 
 **Quick Stats**
 Get a summary of your dataset:
 
 ```{r}
-birdnetprocess::quickstats(all_detections, confidence = 0.5)
+# Use the single file dataframe for demonstration
+birdnetprocess::summarise_detections(df_single, confidence = 0.5)
 ```
 
 **Quick Calls**
 Visualize species counts:
 
-```{r, eval=FALSE}
-birdnetprocess::quickcalls(all_detections, confidence = 0.5)
+```{r}
+birdnetprocess::plot_species_counts(df_single, confidence = 0.5)
 ```
 
 ![Top 10 Calls](analysis/plots/top10_calls_over_time_package.png)
@@ -95,10 +105,10 @@ birdnetprocess::quickcalls(all_detections, confidence = 0.5)
 
 
 If you have a folder full of BirdNET .selection.table.txt files, use read_birdnet_folder() to read them all at once. It will return a single combined tibble.
-```{r}
+```{r, eval=FALSE}
 # Read all BirdNET files in a directory and combine into one data frame
 all_detections <- read_birdnet_folder(
-  folder = "ignore/cc_output/",
+  folder = "path/to/your/detections/",
   pattern = "BirdNET.selection.table.txt$",
   recursive = FALSE
 )
