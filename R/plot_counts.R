@@ -1,14 +1,14 @@
-#' @title quick calls
+#' @title Plot Species Counts
 #' @description
-#' takes birdnet .txt data creates a figure representing number of recordings of
-#' each bird, over the given confidence interval
-#' @param df the dataframe created by the read_birdnet_file or
+#' Takes BirdNET data and creates a figure representing number of recordings of
+#' each bird, over the given confidence interval.
+#' @param df The dataframe created by the read_birdnet_file or
 #'        read_birdnet_folder function
-#' @param confidence the minimum confidence level for the bird call
+#' @param confidence The minimum confidence level for the bird call
 #'        identifications
-#' @param remove.dominants removes dominant species from plot for cleaner
+#' @param remove.dominants Removes dominant species from plot for cleaner
 #'        visualisation
-#' @return a plot showing the number of calls per bird species + prints removed
+#' @return A plot showing the number of calls per bird species + prints removed
 #'         species if applicable
 #' @export
 #' @import lubridate
@@ -16,10 +16,10 @@
 #' @import ggplot2
 #' @examples
 #' \dontrun{
-#' quickcalls(df, 0.5)
+#' plot_species_counts(df, 0.5)
 #' }
 #'
-quickcalls <- function(df, confidence = 0, remove.dominants = FALSE) {
+plot_species_counts <- function(df, confidence = 0, remove.dominants = FALSE) {
   # filters the dataframe by the confidence given + removes 'nocall'
   df1 <- df |>
     dplyr::filter(Confidence > confidence & `Common Name` != "nocall") |>

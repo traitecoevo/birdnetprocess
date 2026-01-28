@@ -1,12 +1,12 @@
-#' @title quick confidence
+#' @title Plot Confidence
 #' @description
-#' creates a streamgraph showing confidence of recorded calls over time
-#' @param df the dataframe created by the read_birdnet_file or
-#'        read_birdnet_folder function
-#' @param confidence optional - the minimum confidence level for the bird call
-#'        identifications
-#' @param bw bandwidth for the density estimation (default: 0.75)
-#' @return a streamgraph indicating confidence of calls over time
+#' Creates a streamgraph showing confidence of recorded calls over time.
+#' @param df The dataframe created by the read_birdnet_file or
+#'        read_birdnet_folder function.
+#' @param confidence Optional - the minimum confidence level for the bird call
+#'        identifications.
+#' @param bw Bandwidth for the density estimation (default: 0.75).
+#' @return A streamgraph indicating confidence of calls over time.
 #' @export
 #' @import lubridate
 #' @import dplyr
@@ -14,9 +14,9 @@
 #' @import ggstream
 #' @examples
 #' \dontrun{
-#' quickconfidence(df, confidence = 0)
+#' plot_confidence(df, confidence = 0)
 #' }
-quickconfidence <- function(df, confidence = 0, bw = 0.75) {
+plot_confidence <- function(df, confidence = 0, bw = 0.75) {
   # mutate confidence into bins
   df <- df |>
     dplyr::mutate(confidence_bin = dplyr::case_when(

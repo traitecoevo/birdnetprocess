@@ -1,4 +1,4 @@
-test_that("quickstats calculates stats correctly", {
+test_that("summarise_detections calculates stats correctly", {
     # Mock data
     # 2 days: 2024-01-01 and 2024-01-02
     t1 <- lubridate::ymd_hms("2024-01-01 10:00:00")
@@ -17,9 +17,9 @@ test_that("quickstats calculates stats correctly", {
     # Peak hour: 2024-01-01 10:00:00 has 3 recordings (t1).
     # Av per day: 5 / 2 = 2.5.
 
-    stats <- quickstats(df, confidence = 0.5)
+    stats <- summarise_detections(df, confidence = 0.5)
 
-    # quickstats returns a tibble with "statistic" and "value" columns (character)
+    # summarise_detections returns a tibble with "statistic" and "value" columns (character)
 
     # Helper to extract value
     get_val <- function(s) {
