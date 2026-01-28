@@ -117,11 +117,7 @@ plot_species <- function(data,
     )
 }
 
-#' @export
-plot_calls_over_time <- function(...) {
-    warning("plot_calls_over_time() is deprecated. Please use plot_top_species() or plot_species().")
-    plot_top_species(...)
-}
+
 
 
 # --- Internal Helper Functions ---

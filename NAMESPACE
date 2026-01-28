@@ -2,7 +2,6 @@
 
 export(birdtime)
 export(parse_birdnet_filename_datetime)
-export(plot_calls_over_time)
 export(plot_species)
 export(plot_top_species)
 export(quickcalls)
