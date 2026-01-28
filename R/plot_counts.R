@@ -1,14 +1,13 @@
 #' @title Plot Species Counts
 #' @description
 #' Takes BirdNET data and creates a figure representing number of recordings of
-#' each bird, over the given confidence interval.
+#' each species, over the given confidence interval.
 #' @param df The dataframe created by the read_birdnet_file or
 #'        read_birdnet_folder function
-#' @param confidence The minimum confidence level for the bird call
-#'        identifications
+#' @param confidence The minimum confidence level for the species identifications
 #' @param remove.dominants Removes dominant species from plot for cleaner
 #'        visualisation
-#' @return A plot showing the number of calls per bird species + prints removed
+#' @return A plot showing the number of calls per species + prints removed
 #'         species if applicable
 #' @export
 #' @import lubridate

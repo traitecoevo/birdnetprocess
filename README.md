@@ -12,14 +12,14 @@ Will Cornwell
 <!-- badges: end -->
 
 `birdnetprocess` helps you process and visualize BirdNET detection
-results.
+results which can be overwhelming in their volume.
 
 ## Install
 
 ``` r
 # install.packages("devtools") # if needed
 devtools::install_github("traitecoevo/birdnetprocess")
-#> Skipping install of 'birdnetprocess' from a github remote, the SHA1 (12de3307) has not changed since last install.
+#> Skipping install of 'birdnetprocess' from a github remote, the SHA1 (77cbcde6) has not changed since last install.
 #>   Use `force = TRUE` to force installation
 ```
 
@@ -31,17 +31,24 @@ The function `parse_birdnet_filename_datetime()` assumes filenames
 follow this pattern:
 `SOMETHING_YYYYMMDD_HHMMSS.BirdNET.selection.table.txt` or similar.
 
-The package now supports both: \* **Raven selection tables** (`.txt`,
-tab-delimited) \* **BirdNET Analyzer CSV output** (`.csv`,
-comma-separated)
+Note that this assumes that you’ve set the time right on your recording
+device and that the filename reflects the true time for the start of
+that time segment.
+
+The package now supports both common birdnet output types:
+
+- **Raven selection tables** (`.txt`, tab-delimited)
+
+- **BirdNET Analyzer CSV output** (`.csv`, comma-separated)
 
 #### 2. Read a Single BirdNET File
 
-Use `read_birdnet_file()` to read one BirdNET selection table. This
-will: \* Detect if it’s a Raven table (tab-separated) or CSV. \* Parse
-the filename for the start time. \* Standardize column names (e.g.,
-`Begin Time (s)`). \* Add `start_time` and `recording_window_time`
-columns.
+Use `read_birdnet_file()` to read one BirdNET selection table.
+
+This will: \* Detect if it’s a Raven table (tab-separated) or CSV. \*
+Parse the filename for the start time. \* Standardize column names
+(e.g., `Begin Time (s)`). \* Add `start_time` and
+`recording_window_time` columns.
 
 ``` r
 library(birdnetprocess)
@@ -88,33 +95,50 @@ have `Start (s)` or `Begin Time (s)`.
 #### 3. Quick Visualization and Statistics
 
 `plot_species_counts` and `summarise_detections` provide immediate
-insights into your data.
+insights into the detections in your data.
 
-**Quick Stats** Get a summary of your dataset:
-
-``` r
-birdnetprocess::summarise_detections(df_raven, confidence = 0.5)
-#> # A tibble: 7 × 2
-#>   statistic                   value         
-#>   <chr>                       <chr>         
-#> 1 Number of species           2             
-#> 2 Number of recordings        2             
-#> 3 Recording window            NA - NA       
-#> 4 Most common bird            American Robin
-#> 5 Peak hour                   <NA>          
-#> 6 Average recordings per day  2             
-#> 7 Average recordings per hour 2
-```
-
-**Quick Calls** Visualize species counts:
+First, let’s read the data from a folder of results (e.g.,
+`detections_SL21`):
 
 ``` r
-birdnetprocess::plot_species_counts(df_raven, confidence = 0.5)
-#> recordings between NA - NA  with confidence >  0.5
+library(birdnetprocess)
+library(dplyr)
+
+# Read all files in the folder
+data <- read_birdnet_folder("detections_SL21", recursive = FALSE)
 ```
 
-![](readme_files/figure-gfm/unnamed-chunk-5-1.png)<!-- --> ![Top 10
-Calls](analysis/plots/top10_calls_over_time_package.png)
+**Quick Stats**
+
+Get a summary of your dataset:
+
+``` r
+birdnetprocess::summarise_detections(data, confidence = 0.5)
+# # A tibble: 7 × 2
+#   statistic                   value
+#   <chr>                       <chr>
+# 1 Number of species           49
+# 2 Number of recordings        8042
+# 3 Recording window            18 Jan 26 - 19 Jan 26
+# 4 Most common species           Black Field Cricket
+# 5 Peak hour                   2026-01-19 04:21:02
+# 6 Average recordings per day  4021
+# 7 Average recordings per hour 178.7111
+```
+
+**Quick Calls**
+
+Visualize species counts:
+
+``` r
+birdnetprocess::plot_species_counts(data, confidence = 0.5)
+```
+
+<figure>
+<img src="man/figures/top10_calls_over_time_package.png"
+alt="Top 10 Calls" />
+<figcaption aria-hidden="true">Top 10 Calls</figcaption>
+</figure>
 
 ### 5. Visualizing Daily Patterns (Day/Night)
 
@@ -123,52 +147,28 @@ the `suncalc` package). Note that you must provide the latitude,
 longitude, and timezone for the shading to work.
 
 ``` r
-library(birdnetprocess)
-
-# Read data
-data <- read_birdnet_folder("path/to/detections_SL21", recursive = FALSE)
-
 # Generate plot with day/night shading
 # Example coordinates for Sydney region
 birdnetprocess::plot_top_species(
   data,
   n_top_species = 10,
   confidence = 0.5,
-  latitude = -32.44,   # Required for suncalc
-  longitude = 152.24,  # Required for suncalc
+  latitude = -32.44, # Required for suncalc
+  longitude = 152.24, # Required for suncalc
   tz = "Australia/Sydney"
 )
 ```
 
 <figure>
-<img src="analysis/plots/day_night_stream.png"
-alt="Day Night Patterns" />
+<img src="man/figures/day_night_stream.png" alt="Day Night Patterns" />
 <figcaption aria-hidden="true">Day Night Patterns</figcaption>
 </figure>
 
 If you have a folder full of BirdNET files, use `read_birdnet_folder()`
-to read them all at once. It will return a single combined tibble.
-
-``` r
-# Read all BirdNET files (TXT or CSV) in a directory
-all_detections <- read_birdnet_folder(
-  folder = "path/to/your/detections/",
-  recursive = FALSE
-)
-
-dplyr::glimpse(all_detections)
-```
-
-Then you can proceed to filter or process as needed for the project.
+to read them all at once. It will return a single combined tibble (as
+shown above).
 
 ### Dependencies
 
-Under the hood, `birdnetprocess` uses:
-
-    - `stringr` for string matching and extraction.
-    - `lubridate` for parsing and handling date-time data.
-    - `readr` for reading tab-delimited text files.
-    - `dplyr` and `purrr` for data manipulation.
-
-These packages should be installed automatically when installing
-`birdnetprocess` from GitHub.
+Dependencies (lubridate and ggplot2 are key) should be installed
+automatically when installing `birdnetprocess` from GitHub.

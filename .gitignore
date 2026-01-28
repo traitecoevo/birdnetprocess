@@ -13,4 +13,5 @@ analysis/
 
 # Outputs
 *.png
+!man/figures/*.png
 verify_local_data.R

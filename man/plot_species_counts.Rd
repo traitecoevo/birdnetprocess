@@ -10,19 +10,18 @@ plot_species_counts(df, confidence = 0, remove.dominants = FALSE)
 \item{df}{The dataframe created by the read_birdnet_file or
 read_birdnet_folder function}
 
-\item{confidence}{The minimum confidence level for the bird call
-identifications}
+\item{confidence}{The minimum confidence level for the species identifications}
 
 \item{remove.dominants}{Removes dominant species from plot for cleaner
 visualisation}
 }
 \value{
-A plot showing the number of calls per bird species + prints removed
+A plot showing the number of calls per species + prints removed
 species if applicable
 }
 \description{
 Takes BirdNET data and creates a figure representing number of recordings of
-each bird, over the given confidence interval.
+each species, over the given confidence interval.
 }
 \examples{
 \dontrun{

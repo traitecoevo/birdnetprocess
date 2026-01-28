@@ -14,9 +14,9 @@ plot_species_stream(
 \arguments{
 \item{df}{The dataframe created by the \code{read_birdnet_file} or \code{read_birdnet_folder} function.}
 
-\item{confidence}{The minimum confidence level for the bird call identifications.}
+\item{confidence}{The minimum confidence level for the species identifications.}
 
-\item{bird.names}{One to six bird names, to view comparative prevalence over time/seasons.}
+\item{bird.names}{One to six species names, to view comparative prevalence over time/seasons.}
 
 \item{bw}{The bandwidth for the kernel density estimation performed by the streamgraph.}
 }

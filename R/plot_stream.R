@@ -2,8 +2,8 @@
 #' @description
 #' Creates a streamgraph showing number of calls over time for each species.
 #' @param df The dataframe created by the `read_birdnet_file` or `read_birdnet_folder` function.
-#' @param confidence The minimum confidence level for the bird call identifications.
-#' @param bird.names One to six bird names, to view comparative prevalence over time/seasons.
+#' @param confidence The minimum confidence level for the species identifications.
+#' @param bird.names One to six species names, to view comparative prevalence over time/seasons.
 #' @param bw The bandwidth for the kernel density estimation performed by the streamgraph.
 #' @return A plot showing calls over time for each species input.
 #' @export

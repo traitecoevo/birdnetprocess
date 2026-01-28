@@ -4,17 +4,21 @@
 \alias{plot_timeline}
 \title{Plot Timeline}
 \usage{
-plot_timeline(df, confidence = 0, bird.names = unique(df$`Common Name`))
+plot_timeline(df, confidence = 0, bird_names = unique(df$`Common Name`))
 }
 \arguments{
-\item{df}{The dataframe created by the \code{read_birdnet_file} or \code{read_birdnet_folder} function.}
+\item{df}{The dataframe created by the \code{read_birdnet_file} or
+\code{read_birdnet_folder} function.}
 
-\item{confidence}{The minimum confidence level for the bird call identifications.}
+\item{confidence}{The minimum confidence level for the bird call
+identifications.}
 
-\item{bird.names}{String of bird names for which recordings over time will be shown.}
+\item{bird_names}{String of bird names for which recordings over time
+will be shown.}
 }
 \value{
-A figure showing number of calls over time for the given confidence interval.
+A figure showing number of calls over time for the given confidence
+interval.
 }
 \description{
 Creates a simple line graph showing number of calls over time.

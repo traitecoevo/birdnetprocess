@@ -128,6 +128,11 @@ read_birdnet_file <- function(file_path, tz = "UTC") {
     df <- df |> dplyr::rename(end_time_s = `End (s)`)
   }
 
+  # Standardize "Common Name"
+  if ("Common name" %in% names(df)) {
+    df <- df |> dplyr::rename(`Common Name` = `Common name`)
+  }
+
   # Standardize "Confirmation" or "Confidence"
   # Raven: "Confidence", CSV: "Confidence" usually, but sometimes could be different?
   # Let's assume Confidence is standard, if not we can add logic here.
