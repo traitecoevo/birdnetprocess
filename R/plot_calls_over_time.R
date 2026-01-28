@@ -10,7 +10,7 @@
 #' @param tz Character. Timezone for day/night shading alignment. Default "UTC".
 #' @param ... Additional arguments passed to internal plotting.
 #' @export
-plot_top_species <- function(data, n_top_species = 10, confidence_threshold = 0.5, ...) {
+plot_top_species <- function(data, n_top_species = 10, confidence_threshold = 0.5, unit = "hour", facet_by = NULL, latitude = NULL, longitude = NULL, tz = "UTC", ...) {
     # Validation
     data <- validate_birdnet_data(data)
 
@@ -38,7 +38,17 @@ plot_top_species <- function(data, n_top_species = 10, confidence_threshold = 0.
         dplyr::filter(`Common name` %in% top_species)
 
     # Plot
-    plot_aggregated_data(data_final, species_list = top_species, time_limits = time_limits, ...)
+    plot_aggregated_data(
+        data_final,
+        species_list = top_species,
+        time_limits = time_limits,
+        unit = unit,
+        facet_by = facet_by,
+        latitude = latitude,
+        longitude = longitude,
+        tz = tz,
+        ...
+    )
 }
 
 #' Plot Specific BirdNET Species
@@ -53,7 +63,7 @@ plot_top_species <- function(data, n_top_species = 10, confidence_threshold = 0.
 #' @param tz Character. Timezone for day/night shading alignment. Default "UTC".
 #' @param ... Additional arguments passed to internal plotting.
 #' @export
-plot_species <- function(data, species_list, confidence_threshold = 0.5, ...) {
+plot_species <- function(data, species_list, confidence_threshold = 0.5, unit = "hour", facet_by = NULL, latitude = NULL, longitude = NULL, tz = "UTC", ...) {
     # Validation
     data <- validate_birdnet_data(data)
 
@@ -75,13 +85,20 @@ plot_species <- function(data, species_list, confidence_threshold = 0.5, ...) {
     # or warn.
     if (nrow(data_final) == 0) {
         warning("No detections found for the specified species with given confidence.")
-        # Return empty plot structure? Or NULL.
-        # If we return NULL, we can't show "zeros" if that's what user expects.
-        # But usually with ggplot NULL is bad.
-        # Let's let plot_aggregated_data handle empty data_final because it has time_limits!
+        return(NULL)
     }
 
-    plot_aggregated_data(data_final, species_list = species_list, time_limits = time_limits, ...)
+    plot_aggregated_data(
+        data_final,
+        species_list = species_list,
+        time_limits = time_limits,
+        unit = unit,
+        facet_by = facet_by,
+        latitude = latitude,
+        longitude = longitude,
+        tz = tz,
+        ...
+    )
 }
 
 #' @export

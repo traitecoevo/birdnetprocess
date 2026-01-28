@@ -4,3 +4,12 @@
 .Ruserdata
 .DS_Store
 ignore*
+
+# Detections
+detections_*/
+
+# Analysis Scripts
+analysis/
+
+# Outputs
+*.png

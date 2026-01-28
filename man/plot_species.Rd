@@ -4,7 +4,17 @@
 \alias{plot_species}
 \title{Plot Specific BirdNET Species}
 \usage{
-plot_species(data, species_list, confidence_threshold = 0.5, ...)
+plot_species(
+  data,
+  species_list,
+  confidence_threshold = 0.5,
+  unit = "hour",
+  facet_by = NULL,
+  latitude = NULL,
+  longitude = NULL,
+  tz = "UTC",
+  ...
+)
 }
 \arguments{
 \item{data}{A data frame containing BirdNET detections.}
@@ -12,8 +22,6 @@ plot_species(data, species_list, confidence_threshold = 0.5, ...)
 \item{species_list}{Character vector. Exact names of species to plot.}
 
 \item{confidence_threshold}{Numeric. Minimum confidence. Default 0.5.}
-
-\item{...}{Additional arguments passed to internal plotting.}
 
 \item{unit}{Character. Time unit for aggregation, passed to \code{lubridate::floor_date}. Default "hour".}
 
@@ -24,6 +32,8 @@ plot_species(data, species_list, confidence_threshold = 0.5, ...)
 \item{longitude}{Numeric. Optional. Longitude for day/night shading (requires \code{suncalc}).}
 
 \item{tz}{Character. Timezone for day/night shading alignment. Default "UTC".}
+
+\item{...}{Additional arguments passed to internal plotting.}
 }
 \description{
 Plot Specific BirdNET Species
