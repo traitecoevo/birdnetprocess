@@ -13,3 +13,4 @@ analysis/
 
 # Outputs
 *.png
+verify_local_data.R

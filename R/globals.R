@@ -24,5 +24,7 @@ utils::globalVariables(c(
     "fill_colour",
     "dominants_info",
     "confidence_bin",
-    "date"
+    "date",
+    "End Time (s)",
+    "End (s)"
 ))

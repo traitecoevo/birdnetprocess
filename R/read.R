@@ -49,35 +49,58 @@ parse_birdnet_filename_datetime <- function(file_name) {
 
 #' Read a single BirdNET selection table file
 #'
-#' @param file_path Path to a BirdNET .selection.table.txt file
-#' @param tz Timezone if you want to override or specify a different timezone
-#'           than what is parsed from the filename (if any). Default "UTC".
+#' @param file_path Path to a BirdNET file (either tab-delimited Raven selection table or CSV).
+#' @param tz Timezone to be used for the start time. Default "UTC".
 #'
 #' @return A tibble with all columns from the BirdNET file plus:
 #'   * `file_name` for reference
 #'   * `start_time` the parsed date-time from the filename
 #'   * `recording_window_time` the absolute time of each detection
+#' @details
+#' The function attempts to read the file based on its extension.
+#' * Ends in `.csv` or `.CSV`: reads as comma-separated.
+#' * Otherwise: reads as tab-separated (Raven selection table default).
+#'
+#' It also standardizes the start time column:
+#' * If `Begin Time (s)` exists (Raven), it is used.
+#' * If `Start (s)` exists (CSV), it is renamed to `Begin Time (s)` internally (or standardizing to `begin_time_s`).
+#'
+#' Filenames must ideally follow the pattern `YYYYMMDD_HHMMSS` to allow automatic `start_time` parsing.
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' df <- read_birdnet_file("1STSMM2_20241105_050000.BirdNET.selection.table.txt")
-#' head(df)
+#' # Read a Raven selection table
+#' df_raven <- read_birdnet_file("data/SiteA_20240101_120000.BirdNET.selection.table.txt")
+#'
+#' # Read a CSV
+#' df_csv <- read_birdnet_file("data/SiteA_20240101_120000.BirdNET.results.csv")
 #' }
 read_birdnet_file <- function(file_path, tz = "UTC") {
-  file_name <- basename(file_path) # remove directory path
-  start_time <- parse_birdnet_filename_datetime(file_name)
+  file_name <- basename(file_path)
+  start_time <- tryCatch(
+    {
+      parse_birdnet_filename_datetime(file_name)
+    },
+    error = function(e) {
+      warning(paste(
+        "Could not parse datetime from filename:", file_name,
+        "- start_time will be NA. Ensure filename matches 'YYYYMMDD_HHMMSS' pattern."
+      ))
+      return(as.POSIXct(NA, tz = tz))
+    }
+  )
 
-  # Check file extension to guess delimiter
-  # But also be robust: try reading comma first if .csv, else tab
+  # Check file extension to detect format
   if (grepl("\\.csv$", file_path, ignore.case = TRUE)) {
     df <- readr::read_csv(file_path, show_col_types = FALSE)
   } else {
+    # Default to tab-delimited (Raven)
     df <- readr::read_delim(file_path, delim = "\t", show_col_types = FALSE)
   }
 
-  # Ensure the Start Time column exists.
-  # Standard BirdNET is "Begin Time (s)", but some exports/versions use "Start (s)"
+  # Standardize "Begin Time (s)" column
+  # Raven uses "Begin Time (s)", BirdNET CSV often uses "Start (s)"
   if ("Begin Time (s)" %in% names(df)) {
     df <- df |> dplyr::rename(begin_time_s = `Begin Time (s)`)
   } else if ("Start (s)" %in% names(df)) {
@@ -88,6 +111,18 @@ read_birdnet_file <- function(file_path, tz = "UTC") {
       file_path
     ))
   }
+
+  # Standardize "End Time (s)" column
+  if ("End Time (s)" %in% names(df)) {
+    df <- df |> dplyr::rename(end_time_s = `End Time (s)`)
+  } else if ("End (s)" %in% names(df)) {
+    df <- df |> dplyr::rename(end_time_s = `End (s)`)
+  }
+
+  # Standardize "Confirmation" or "Confidence"
+  # Raven: "Confidence", CSV: "Confidence" usually, but sometimes could be different?
+  # Let's assume Confidence is standard, if not we can add logic here.
+  # Ensure column names are clean? For now we just focus on the time columns required for processing.
 
   # add columns
   df |>
@@ -100,26 +135,21 @@ read_birdnet_file <- function(file_path, tz = "UTC") {
 
 #' Read all BirdNET selection files in a folder
 #'
-#' @param folder A folder path containing BirdNET .selection.table.txt files
+#' @param folder A folder path containing BirdNET files.
 #' @param pattern A regex pattern to match the files.
-#'        Default is "BirdNET.selection.table.txt$", meaning any file ending with that.
+#'        Default matches `.txt` or `.csv` files that look like BirdNET outputs.
+#'        e.g. "BirdNET.*\\.(txt|csv)$"
 #' @param recursive Whether to search recursively in subfolders. Default FALSE.
 #'
-#' @return A single tibble combining all data from the matched files,
-#'         with columns:
-#'         - all columns from each BirdNET file
-#'         - `file_name`
-#'         - `start_time`
-#'         - `recording_window_time`
+#' @return A single tibble combining all data.
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' all_detections <- read_birdnet_folder("path/to/folder")
-#' dplyr::glimpse(all_detections)
 #' }
 read_birdnet_folder <- function(folder = ".",
-                                pattern = "BirdNET.selection.table.txt$",
+                                pattern = "BirdNET.*\\.(txt|csv)$",
                                 recursive = FALSE) {
   # gather all matching files
   files <- list.files(
@@ -141,7 +171,7 @@ read_birdnet_folder <- function(folder = ".",
 #' Read BirdNET selection files from multiple sites (folders)
 #'
 #' @param folder_paths A character vector of folder paths, one for each site.
-#' @param pattern A regex pattern to match the files. Default "BirdNET.selection.table.txt$".
+#' @param pattern A regex pattern to match the files. Default "BirdNET.*\\.(txt|csv)$".
 #' @param recursive Whether to search recursively in subfolders. Default FALSE.
 #'
 #' @return A single tibble combining all data.
@@ -154,7 +184,7 @@ read_birdnet_folder <- function(folder = ".",
 #' all_sites <- read_birdnet_sites(folders, pattern = "BirdNET.results.csv$")
 #' }
 read_birdnet_sites <- function(folder_paths,
-                               pattern = "BirdNET.selection.table.txt$",
+                               pattern = "BirdNET.*\\.(txt|csv)$",
                                recursive = FALSE) {
   # Helper to read one folder and add Site column
   read_one_site <- function(fp) {
