@@ -1,0 +1,21 @@
+utils::globalVariables(c(
+    "Confidence",
+    "Common name",
+    "Common Name",
+    "recording_window_time",
+    "xmax",
+    "xmin",
+    "ymin",
+    "ymax",
+    "time_bin",
+    "Begin Time (s)",
+    "Start (s)",
+    "begin_time_s",
+    "file_name",
+    "start_time",
+    "n",
+    "date_only",
+    "Site",
+    "statistic",
+    "value"
+))

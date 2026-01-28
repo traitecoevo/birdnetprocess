@@ -44,7 +44,7 @@ parse_birdnet_filename_datetime <- function(file_name) {
   date_time_str <- paste(date_formatted, time_formatted)
   start_time <- lubridate::ymd_hms(date_time_str, tz = "UTC") # or your local tz
 
-  return(start_time)
+  start_time
 }
 
 #' Read a single BirdNET selection table file
@@ -79,22 +79,23 @@ read_birdnet_file <- function(file_path, tz = "UTC") {
   # Ensure the Start Time column exists.
   # Standard BirdNET is "Begin Time (s)", but some exports/versions use "Start (s)"
   if ("Begin Time (s)" %in% names(df)) {
-    df <- df %>% dplyr::rename(begin_time_s = `Begin Time (s)`)
+    df <- df |> dplyr::rename(begin_time_s = `Begin Time (s)`)
   } else if ("Start (s)" %in% names(df)) {
-    df <- df %>% dplyr::rename(begin_time_s = `Start (s)`)
+    df <- df |> dplyr::rename(begin_time_s = `Start (s)`)
   } else {
-    stop(paste("Could not find 'Begin Time (s)' or 'Start (s)' column in file:", file_path))
+    stop(paste(
+      "Could not find 'Begin Time (s)' or 'Start (s)' column in file:",
+      file_path
+    ))
   }
 
   # add columns
-  df <- df %>%
+  df |>
     dplyr::mutate(
       file_name = file_name,
       start_time = start_time,
       recording_window_time = start_time + begin_time_s
     )
-
-  return(df)
 }
 
 #' Read all BirdNET selection files in a folder
@@ -134,9 +135,7 @@ read_birdnet_folder <- function(folder = ".",
   }
 
   # read them all, combining into one data frame
-  df_all <- purrr::map_dfr(files, ~ read_birdnet_file(.x))
-
-  return(df_all)
+  purrr::map_dfr(files, ~ read_birdnet_file(.x))
 }
 
 #' Read BirdNET selection files from multiple sites (folders)
@@ -164,13 +163,11 @@ read_birdnet_sites <- function(folder_paths,
 
     # If empty, return empty with Site column if possible, or just empty
     if (nrow(df) > 0) {
-      df <- df %>% dplyr::mutate(Site = site_name)
+      df <- df |> dplyr::mutate(Site = site_name)
     }
-    return(df)
+    df
   }
 
   # Read all and combine
-  df_all <- purrr::map_dfr(folder_paths, read_one_site)
-
-  return(df_all)
+  purrr::map_dfr(folder_paths, read_one_site)
 }

@@ -10,20 +10,28 @@
 #' @param tz Character. Timezone for day/night shading alignment. Default "UTC".
 #' @param ... Additional arguments passed to internal plotting.
 #' @export
-plot_top_species <- function(data, n_top_species = 10, confidence_threshold = 0.5, unit = "hour", facet_by = NULL, latitude = NULL, longitude = NULL, tz = "UTC", ...) {
+plot_top_species <- function(data,
+                             n_top_species = 10,
+                             confidence_threshold = 0.5,
+                             unit = "hour",
+                             facet_by = NULL,
+                             latitude = NULL,
+                             longitude = NULL,
+                             tz = "UTC",
+                             ...) {
     # Validation
     data <- validate_birdnet_data(data)
 
     # Filter by confidence
-    data_filtered <- data %>% dplyr::filter(Confidence >= confidence_threshold)
+    data_filtered <- data |> dplyr::filter(Confidence >= confidence_threshold)
     if (nrow(data_filtered) == 0) {
         return(NULL)
     }
 
     # Identify Top Species
-    top_species <- data_filtered %>%
-        dplyr::count(`Common name`, sort = TRUE) %>%
-        dplyr::slice_head(n = n_top_species) %>%
+    top_species <- data_filtered |>
+        dplyr::count(`Common name`, sort = TRUE) |>
+        dplyr::slice_head(n = n_top_species) |>
         dplyr::pull(`Common name`)
 
     if (length(top_species) == 0) {
@@ -34,7 +42,7 @@ plot_top_species <- function(data, n_top_species = 10, confidence_threshold = 0.
     time_limits <- range(data_filtered$recording_window_time, na.rm = TRUE)
 
     # Filter to Top Species
-    data_final <- data_filtered %>%
+    data_final <- data_filtered |>
         dplyr::filter(`Common name` %in% top_species)
 
     # Plot
@@ -63,12 +71,20 @@ plot_top_species <- function(data, n_top_species = 10, confidence_threshold = 0.
 #' @param tz Character. Timezone for day/night shading alignment. Default "UTC".
 #' @param ... Additional arguments passed to internal plotting.
 #' @export
-plot_species <- function(data, species_list, confidence_threshold = 0.5, unit = "hour", facet_by = NULL, latitude = NULL, longitude = NULL, tz = "UTC", ...) {
+plot_species <- function(data,
+                         species_list,
+                         confidence_threshold = 0.5,
+                         unit = "hour",
+                         facet_by = NULL,
+                         latitude = NULL,
+                         longitude = NULL,
+                         tz = "UTC",
+                         ...) {
     # Validation
     data <- validate_birdnet_data(data)
 
     # Filter by confidence
-    data_filtered <- data %>% dplyr::filter(Confidence >= confidence_threshold)
+    data_filtered <- data |> dplyr::filter(Confidence >= confidence_threshold)
     if (nrow(data_filtered) == 0) {
         return(NULL)
     }
@@ -77,7 +93,7 @@ plot_species <- function(data, species_list, confidence_threshold = 0.5, unit = 
     time_limits <- range(data_filtered$recording_window_time, na.rm = TRUE)
 
     # Filter by List
-    data_final <- data_filtered %>%
+    data_final <- data_filtered |>
         dplyr::filter(`Common name` %in% species_list)
 
     # Plot
@@ -112,14 +128,21 @@ plot_calls_over_time <- function(...) {
 
 validate_birdnet_data <- function(data) {
     if ("Common Name" %in% names(data) && !"Common name" %in% names(data)) {
-        data <- data %>% dplyr::rename(`Common name` = `Common Name`)
+        data <- data |> dplyr::rename(`Common name` = `Common Name`)
     }
     if (!"Common name" %in% names(data)) stop("Missing 'Common name' column.")
     if (!"recording_window_time" %in% names(data)) stop("Missing 'recording_window_time' column.")
     data
 }
 
-plot_aggregated_data <- function(data, species_list, time_limits, unit = "hour", facet_by = NULL, latitude = NULL, longitude = NULL, tz = "UTC") {
+plot_aggregated_data <- function(data,
+                                 species_list,
+                                 time_limits,
+                                 unit = "hour",
+                                 facet_by = NULL,
+                                 latitude = NULL,
+                                 longitude = NULL,
+                                 tz = "UTC") {
     # Prepare Plot Data (Aggregation)
     group_vars <- c("time_bin", "Common name")
     if (!is.null(facet_by)) {
@@ -128,9 +151,9 @@ plot_aggregated_data <- function(data, species_list, time_limits, unit = "hour",
     }
 
     if (nrow(data) > 0) {
-        plot_data <- data %>%
-            dplyr::mutate(time_bin = lubridate::floor_date(recording_window_time, unit = unit)) %>%
-            dplyr::group_by(dplyr::across(dplyr::all_of(group_vars))) %>%
+        plot_data <- data |>
+            dplyr::mutate(time_bin = lubridate::floor_date(recording_window_time, unit = unit)) |>
+            dplyr::group_by(dplyr::across(dplyr::all_of(group_vars))) |>
             dplyr::summarise(n = dplyr::n(), .groups = "drop")
     } else {
         # Handle empty data (species not found but time limits exist)
@@ -138,7 +161,7 @@ plot_aggregated_data <- function(data, species_list, time_limits, unit = "hour",
             time_bin = lubridate::floor_date(time_limits[1], unit = unit), # Dummy to set type
             `Common name` = character(),
             n = integer()
-        ) %>% dplyr::slice(0) # Empty row with correct types
+        ) |> dplyr::slice(0) # Empty row with correct types
         if (!is.null(facet_by)) {
             plot_data[[facet_by]] <- character() # Add empty facet col
         }
@@ -154,7 +177,7 @@ plot_aggregated_data <- function(data, species_list, time_limits, unit = "hour",
     full_time_seq <- seq(from = start_bin, to = end_bin, by = unit)
 
     if (is.null(facet_by)) {
-        plot_data <- plot_data %>%
+        plot_data <- plot_data |>
             tidyr::complete(time_bin = full_time_seq, `Common name` = species_list, fill = list(n = 0))
     } else {
         # If faceting, we need to know WHICH facets exist.
@@ -165,12 +188,12 @@ plot_aggregated_data <- function(data, species_list, time_limits, unit = "hour",
 
         # Assuming plot_data matches conventions
         if (nrow(plot_data) > 0) {
-            plot_data <- plot_data %>%
+            plot_data <- plot_data |>
                 tidyr::complete(time_bin = full_time_seq, `Common name` = species_list, !!rlang::sym(facet_by), fill = list(n = 0))
         } else {
             # Data empty. Create grid for time/species, but we miss Facet Column values.
             # User sees empty plot. Acceptable fallback.
-            plot_data <- tidyr::expand_grid(time_bin = full_time_seq, `Common name` = species_list) %>%
+            plot_data <- tidyr::expand_grid(time_bin = full_time_seq, `Common name` = species_list) |>
                 dplyr::mutate(n = 0)
             # Warning: Facet column missing. ggplot facet will fail if variables missing.
             # Ideally we'd need 'site_list' too.
@@ -197,7 +220,7 @@ plot_aggregated_data <- function(data, species_list, time_limits, unit = "hour",
                 ymin = -Inf, ymax = Inf
             )
 
-            rects <- rects %>% dplyr::filter(xmax >= min(full_time_seq) & xmin <= max(full_time_seq))
+            rects <- rects |> dplyr::filter(xmax >= min(full_time_seq) & xmin <= max(full_time_seq))
 
             if (nrow(rects) > 0) {
                 p <- p + ggplot2::geom_rect(

@@ -23,8 +23,8 @@ test_that("quickstats calculates stats correctly", {
 
     # Helper to extract value
     get_val <- function(s) {
-        stats %>%
-            dplyr::filter(statistic == s) %>%
+        stats |>
+            dplyr::filter(statistic == s) |>
             dplyr::pull(value)
     }
 

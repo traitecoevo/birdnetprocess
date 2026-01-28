@@ -23,6 +23,8 @@ Imports:
     tibble,
     ggplot2,
     suncalc
+Remotes:
+    davidsjoberg/ggstream
 Suggests:
     covr,
     knitr,
