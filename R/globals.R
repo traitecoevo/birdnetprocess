@@ -17,5 +17,12 @@ utils::globalVariables(c(
     "date_only",
     "Site",
     "statistic",
-    "value"
+    "value",
+    "highest_non_dom",
+    "is_dom",
+    "n_scaled",
+    "fill_colour",
+    "dominants_info",
+    "confidence_bin",
+    "date"
 ))

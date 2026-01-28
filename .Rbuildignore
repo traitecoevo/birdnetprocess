@@ -1,2 +1,7 @@
 ^birdnetprocess\.Rproj$
 ^\.Rproj\.user$
+^.github$
+^analysis$
+^README.md$
+^detections_.*$
+^readme.Rmd$

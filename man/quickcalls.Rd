@@ -21,6 +21,8 @@ takes birdnet .txt data creates a figure representing number of recordings of
 each bird, over the given confidence interval
 }
 \examples{
-\dontrun{ quickcalls(df, 0.5) }
+\dontrun{
+quickcalls(df, 0.5)
+}
 
 }

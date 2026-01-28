@@ -7,9 +7,13 @@
 quickconfidence(df, confidence = 0, bw = 0.75)
 }
 \arguments{
-\item{df}{the dataframe created by the read_birdnet_file or read_birdnet_folder function}
+\item{df}{the dataframe created by the read_birdnet_file or
+read_birdnet_folder function}
 
-\item{confidence}{optional - the minimum confidence level for the bird call identifications}
+\item{confidence}{optional - the minimum confidence level for the bird call
+identifications}
+
+\item{bw}{bandwidth for the density estimation (default: 0.75)}
 }
 \value{
 a streamgraph indicating confidence of calls over time
@@ -18,5 +22,7 @@ a streamgraph indicating confidence of calls over time
 creates a streamgraph showing confidence of recorded calls over time
 }
 \examples{
-\dontrun{ quickconfidence(df, confidence = 0) }
+\dontrun{
+quickconfidence(df, confidence = 0)
+}
 }
