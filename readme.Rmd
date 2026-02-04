@@ -56,14 +56,12 @@ library(birdnetprocess)
 library(dplyr)
 
 # Use example data included in the package
-raven_path <- system.file("extdata", "example_raven.txt", package = "birdnetprocess")
-csv_path <- system.file("extdata", "example_birdnet.csv", package = "birdnetprocess")
+raven_path <- system.file("extdata", "SiteA_20240101_120000.BirdNET.selection.table.txt", package = "birdnetprocess")
+csv_path <- system.file("extdata", "SiteA_20240101_120000.BirdNET.results.csv", package = "birdnetprocess")
 
-# Create a mock filename with a timestamp for demonstration
-# (The example files in extdata don't have timestamps in filenames, so we mock it for the reader)
-# In real use, your files should look like: SiteA_20240101_120000.BirdNET.selection.table.txt
+# The example files in extdata now have valid timestamps in their filenames:
+# SiteA_20240101_120000.BirdNET.selection.table.txt
 
-# We'll just read them directly for now; start_time will be NA if filename doesn't match
 df_raven <- read_birdnet_file(raven_path)
 df_csv <- read_birdnet_file(csv_path)
 

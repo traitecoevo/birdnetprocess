@@ -1,13 +1,13 @@
 test_that("read_birdnet_file handles Raven TXT and CSV", {
     # Paths to example data
-    raven_path <- system.file("extdata", "example_raven.txt", package = "birdnetprocess")
-    csv_path <- system.file("extdata", "example_birdnet.csv", package = "birdnetprocess")
+    raven_path <- system.file("extdata", "SiteA_20240101_120000.BirdNET.selection.table.txt", package = "birdnetprocess")
+    csv_path <- system.file("extdata", "SiteA_20240101_120000.BirdNET.results.csv", package = "birdnetprocess")
 
     # Check if files exist (development environment might not have installed package yet)
     # If running from devtools::test(), system.file might not find it unless installed.
     # So we fallback to local path if system.file returns empty.
-    if (raven_path == "") raven_path <- "../../inst/extdata/example_raven.txt"
-    if (csv_path == "") csv_path <- "../../inst/extdata/example_birdnet.csv"
+    if (raven_path == "") raven_path <- "../../inst/extdata/SiteA_20240101_120000.BirdNET.selection.table.txt"
+    if (csv_path == "") csv_path <- "../../inst/extdata/SiteA_20240101_120000.BirdNET.results.csv"
 
     expect_true(file.exists(raven_path))
     expect_true(file.exists(csv_path))
@@ -24,19 +24,13 @@ test_that("read_birdnet_file handles Raven TXT and CSV", {
     expect_s3_class(df_csv, "tbl_df")
     expect_true("begin_time_s" %in% names(df_csv)) # Should be renamed from Start (s)
     expect_equal(df_csv$begin_time_s[1], 1.5)
-
-    # Check warning for no timestamp in filename
-    expect_warning(
-        read_birdnet_file(raven_path),
-        "Could not parse datetime"
-    )
 })
 
 test_that("read_birdnet_file handles filenames with timestamps", {
     # Mock a file with a timestamp
     # Reuse the CSV content
-    csv_path <- system.file("extdata", "example_birdnet.csv", package = "birdnetprocess")
-    if (csv_path == "") csv_path <- "../../inst/extdata/example_birdnet.csv"
+    csv_path <- system.file("extdata", "SiteA_20240101_120000.BirdNET.results.csv", package = "birdnetprocess")
+    if (csv_path == "") csv_path <- "../../inst/extdata/SiteA_20240101_120000.BirdNET.results.csv"
 
     temp_dir <- tempdir()
     mock_name <- "SiteA_20240101_120000.BirdNET.results.csv"
