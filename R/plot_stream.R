@@ -23,6 +23,7 @@
 #' @import lubridate
 #' @import dplyr
 #' @import ggplot2
+#' @export
 #'
 #' @examples
 #' \dontrun{

@@ -8,3 +8,6 @@
 ^readme_files$
 ^readme\.html$
 ^rebuild_readme_plots\.R$
+^FMANC_.*\.txt$
+^WCON1_.*\.csv$
+^Rplots\.pdf$

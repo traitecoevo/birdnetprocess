@@ -56,35 +56,6 @@ parse_birdnet_filename_datetime <- function(file_name) {
   start_time
 }
 
-#' Read a single BirdNET selection table file
-#'
-#' @param file_path Path to a BirdNET file (either tab-delimited Raven selection table or CSV).
-#' @param tz Timezone to be used for the start time. Default "UTC".
-#'
-#' @return A tibble with all columns from the BirdNET file plus:
-#'   * `file_name` for reference
-#'   * `start_time` the parsed date-time from the filename
-#'   * `recording_window_time` the absolute time of each detection
-#' @details
-#' The function attempts to read the file based on its extension.
-#' * Ends in `.csv` or `.CSV`: reads as comma-separated.
-#' * Otherwise: reads as tab-separated (Raven selection table default).
-#'
-#' It also standardizes the start time column:
-#' * If `Begin Time (s)` exists (Raven), it is used.
-#' * If `Start (s)` exists (CSV), it is renamed to `Begin Time (s)` internally (or standardizing to `begin_time_s`).
-#'
-#' Filenames must ideally follow the pattern `YYYYMMDD_HHMMSS` to allow automatic `start_time` parsing.
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Read a Raven selection table
-#' df_raven <- read_birdnet_file("data/SiteA_20240101_120000.BirdNET.selection.table.txt")
-#'
-#' # Read a CSV
-#' df_csv <- read_birdnet_file("data/SiteA_20240101_120000.BirdNET.results.csv")
-#' }
 #' Convert time values to numeric seconds
 #'
 #' Internal helper to handle various time formats from BirdNET outputs.
@@ -134,6 +105,35 @@ ensure_numeric_seconds <- function(x) {
   as.numeric(x)
 }
 
+#' Read a single BirdNET selection table file
+#'
+#' @param file_path Path to a BirdNET file (either tab-delimited Raven selection table or CSV).
+#' @param tz Timezone to be used for the start time. Default "UTC".
+#'
+#' @return A tibble with all columns from the BirdNET file plus:
+#'   * `file_name` for reference
+#'   * `start_time` the parsed date-time from the filename
+#'   * `recording_window_time` the absolute time of each detection
+#' @details
+#' The function attempts to read the file based on its extension.
+#' * Ends in `.csv` or `.CSV`: reads as comma-separated.
+#' * Otherwise: reads as tab-separated (Raven selection table default).
+#'
+#' It also standardizes the start time column:
+#' * If `Begin Time (s)` exists (Raven), it is used.
+#' * If `Start (s)` exists (CSV), it is renamed to `Begin Time (s)` internally (or standardizing to `begin_time_s`).
+#'
+#' Filenames must ideally follow the pattern `YYYYMMDD_HHMMSS` to allow automatic `start_time` parsing.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Read a Raven selection table
+#' df_raven <- read_birdnet_file("data/SiteA_20240101_120000.BirdNET.selection.table.txt")
+#'
+#' # Read a CSV
+#' df_csv <- read_birdnet_file("data/SiteA_20240101_120000.BirdNET.results.csv")
+#' }
 read_birdnet_file <- function(file_path, tz = "UTC") {
   file_name <- basename(file_path)
   start_time <- tryCatch(
