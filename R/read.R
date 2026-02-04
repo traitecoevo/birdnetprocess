@@ -85,6 +85,55 @@ parse_birdnet_filename_datetime <- function(file_name) {
 #' # Read a CSV
 #' df_csv <- read_birdnet_file("data/SiteA_20240101_120000.BirdNET.results.csv")
 #' }
+#' Convert time values to numeric seconds
+#'
+#' Internal helper to handle various time formats from BirdNET outputs.
+#' Converts POSIXct, hms, difftime, or character time values to numeric seconds.
+#'
+#' @param x A vector of time values (numeric, POSIXct, hms, difftime, or character)
+#' @return A numeric vector of seconds
+#' @noRd
+ensure_numeric_seconds <- function(x) {
+  if (is.numeric(x)) {
+    return(x)
+  }
+
+  if (inherits(x, "POSIXct") || inherits(x, "POSIXlt")) {
+    # POSIXct datetime: calculate seconds from first timestamp
+    # This happens when BirdNET GUI outputs full datetime strings
+    first_time <- min(x, na.rm = TRUE)
+    return(as.numeric(difftime(x, first_time, units = "secs")))
+  }
+
+  if (inherits(x, "difftime") || inherits(x, "hms")) {
+    # hms/difftime: convert directly to numeric seconds
+    return(as.numeric(x, units = "secs"))
+  }
+
+  if (is.character(x)) {
+    # Try parsing as HMS time string
+    parsed <- tryCatch(
+      {
+        hms::parse_hms(x)
+      },
+      error = function(e) NULL
+    )
+    if (!is.null(parsed)) {
+      return(as.numeric(parsed, units = "secs"))
+    }
+
+    # Try parsing as numeric string
+    as_num <- suppressWarnings(as.numeric(x))
+    if (!all(is.na(as_num))) {
+      return(as_num)
+    }
+  }
+
+  # Fallback: try coercing to numeric
+  warning("Could not convert time column to numeric seconds. Attempting direct coercion.")
+  as.numeric(x)
+}
+
 read_birdnet_file <- function(file_path, tz = "UTC") {
   file_name <- basename(file_path)
   start_time <- tryCatch(
@@ -126,6 +175,19 @@ read_birdnet_file <- function(file_path, tz = "UTC") {
     df <- df |> dplyr::rename(end_time_s = `End Time (s)`)
   } else if ("End (s)" %in% names(df)) {
     df <- df |> dplyr::rename(end_time_s = `End (s)`)
+  }
+
+  # Ensure time columns are numeric (handles POSIXct, hms, difftime from GUI)
+
+  df <- df |>
+    dplyr::mutate(
+      begin_time_s = ensure_numeric_seconds(begin_time_s)
+    )
+  if ("end_time_s" %in% names(df)) {
+    df <- df |>
+      dplyr::mutate(
+        end_time_s = ensure_numeric_seconds(end_time_s)
+      )
   }
 
   # Standardize "Common Name"

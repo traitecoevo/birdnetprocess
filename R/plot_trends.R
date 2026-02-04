@@ -8,6 +8,7 @@
 #' @param latitude Numeric. Optional. Latitude for day/night shading (requires `suncalc`).
 #' @param longitude Numeric. Optional. Longitude for day/night shading (requires `suncalc`).
 #' @param tz Character. Timezone for day/night shading alignment. Default "UTC".
+#' @param log_scaling Logical. If TRUE, uses a pseudo-log scale for the y-axis (handles zeros elegantly). Default FALSE.
 #' @param ... Additional arguments passed to internal plotting.
 #' @export
 plot_top_species <- function(data,
@@ -18,6 +19,7 @@ plot_top_species <- function(data,
                              latitude = NULL,
                              longitude = NULL,
                              tz = "UTC",
+                             log_scaling = FALSE,
                              ...) {
     # Validation
     data <- validate_birdnet_data(data)
@@ -55,6 +57,7 @@ plot_top_species <- function(data,
         latitude = latitude,
         longitude = longitude,
         tz = tz,
+        log_scaling = log_scaling,
         ...
     )
 }
@@ -69,6 +72,7 @@ plot_top_species <- function(data,
 #' @param latitude Numeric. Optional. Latitude for day/night shading (requires `suncalc`).
 #' @param longitude Numeric. Optional. Longitude for day/night shading (requires `suncalc`).
 #' @param tz Character. Timezone for day/night shading alignment. Default "UTC".
+#' @param log_scaling Logical. If TRUE, uses a pseudo-log scale for the y-axis (handles zeros elegantly). Default FALSE.
 #' @param ... Additional arguments passed to internal plotting.
 #' @export
 plot_species <- function(data,
@@ -79,6 +83,7 @@ plot_species <- function(data,
                          latitude = NULL,
                          longitude = NULL,
                          tz = "UTC",
+                         log_scaling = FALSE,
                          ...) {
     # Validation
     data <- validate_birdnet_data(data)
@@ -113,11 +118,10 @@ plot_species <- function(data,
         latitude = latitude,
         longitude = longitude,
         tz = tz,
+        log_scaling = log_scaling,
         ...
     )
 }
-
-
 
 
 # --- Internal Helper Functions ---
@@ -138,7 +142,8 @@ plot_aggregated_data <- function(data,
                                  facet_by = NULL,
                                  latitude = NULL,
                                  longitude = NULL,
-                                 tz = "UTC") {
+                                 tz = "UTC",
+                                 log_scaling = FALSE) {
     # Prepare Plot Data (Aggregation)
     group_vars <- c("time_bin", "Common name")
     if (!is.null(facet_by)) {
@@ -242,6 +247,14 @@ plot_aggregated_data <- function(data,
         ) +
         ggplot2::theme_minimal() +
         ggplot2::theme(legend.position = "bottom", axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+
+    if (log_scaling) {
+        # Using pseudo_log_trans because data contains zeros from zero-filling.
+        # This handles zeros gracefully (n=0 remains at 0) while applying log scale for n > 0.
+        p <- p + ggplot2::scale_y_continuous(
+            trans = scales::pseudo_log_trans(base = 10)
+        )
+    }
 
     if (!is.null(facet_by)) {
         p <- p + ggplot2::facet_wrap(stats::as.formula(paste("~", facet_by)), scales = "free_y")

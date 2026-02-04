@@ -13,6 +13,7 @@ plot_top_species(
   latitude = NULL,
   longitude = NULL,
   tz = "UTC",
+  log_scaling = FALSE,
   ...
 )
 }
@@ -32,6 +33,8 @@ plot_top_species(
 \item{longitude}{Numeric. Optional. Longitude for day/night shading (requires \code{suncalc}).}
 
 \item{tz}{Character. Timezone for day/night shading alignment. Default "UTC".}
+
+\item{log_scaling}{Logical. If TRUE, uses a pseudo-log scale for the y-axis (handles zeros elegantly). Default FALSE.}
 
 \item{...}{Additional arguments passed to internal plotting.}
 }

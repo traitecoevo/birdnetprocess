@@ -1,19 +1,50 @@
-#' @title Plot Species Stream
+#' Plot Species Stream
+#'
 #' @description
-#' Creates a streamgraph showing number of calls over time for each species.
-#' @param df The dataframe created by the `read_birdnet_file` or `read_birdnet_folder` function.
-#' @param confidence The minimum confidence level for the species identifications.
-#' @param bird.names One to six species names, to view comparative prevalence over time/seasons.
-#' @param bw The bandwidth for the kernel density estimation performed by the streamgraph.
-#' @return A plot showing calls over time for each species input.
-#' @export
+#' Creates a streamgraph showing the number of calls over time for selected species. This visualization
+#' allows for the comparison of species prevalence across different times or seasons.
+#'
+#' @param df A data frame representing BirdNET results, ideally created by `read_birdnet_file` or `read_birdnet_folder`.
+#'   Must contain columns: `start_time`, `Common Name`, and `Confidence`.
+#' @param confidence Numeric. The minimum confidence level (0-1) for species identifications to be included.
+#'   Defaults to 0.
+#' @param bird.names Character vector. One or more species names ("Common Name") to visualize.
+#'   Defaults to all unique species in the provided dataframe.
+#' @param bw Numeric. The bandwidth for the kernel density estimation performed by `ggstream`.
+#'   Adjusts the smoothness of the stream. Defaults to 0.75.
+#'
+#' @details
+#' This function requires the `ggstream` package to be installed. It filters the data based on the provided
+#' confidence threshold and species names, then aggregates the count of calls per day.
+#' The resulting plot is a "ridge" type streamgraph.
+#'
+#' @return A `ggplot` object showing the streamgraph of species calls over time.
+#'
 #' @import lubridate
 #' @import dplyr
 #' @import ggplot2
+#'
 #' @examples
 #' \dontrun{
-#' plot_species_stream(df, 0.5, c("Galah", "Brown Songlark", "Little Corella"))
+#' # Assuming 'results' is a dataframe from read_birdnet_folder()
+#' # Plot stream for specific species with a confidence threshold
+#' plot_species_stream(results, confidence = 0.5, bird.names = c("Galah", "Magpie-lark"))
 #' }
+#'
+#' # Runnable example with mock data
+#' data <- data.frame(
+#'   start_time = as.POSIXct(c(
+#'     "2023-01-01 12:00:00", "2023-01-02 12:00:00",
+#'     "2023-01-01 13:00:00", "2023-01-03 12:00:00"
+#'   )),
+#'   `Common Name` = c("Species A", "Species A", "Species B", "Species B"),
+#'   Confidence = c(0.9, 0.8, 0.95, 0.7),
+#'   check.names = FALSE
+#' )
+#' if (requireNamespace("ggstream", quietly = TRUE)) {
+#'   plot_species_stream(data, confidence = 0.5)
+#' }
+#'
 plot_species_stream <- function(df, confidence = 0,
                                 bird.names = unique(df$`Common Name`),
                                 bw = 0.75) {

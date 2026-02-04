@@ -21,7 +21,8 @@ Imports:
     ggplot2,
     scales,
     rlang,
-    tidyr
+    tidyr,
+    hms
 Remotes:
     davidsjoberg/ggstream
 Suggests:

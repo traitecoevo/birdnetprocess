@@ -175,3 +175,31 @@ test_that("plot_species fills zeros based on full data range", {
     row_t3 <- plot_data %>% dplyr::filter(time_bin == t3)
     expect_equal(row_t3$n, 0)
 })
+
+test_that("plot_top_species handles log_scaling correctly", {
+    mock_data <- dplyr::tibble(
+        `Common name` = "Bird A",
+        recording_window_time = seq(
+            lubridate::ymd_hms("2024-01-01 10:00:00"),
+            lubridate::ymd_hms("2024-01-01 15:00:00"),
+            by = "1 hour"
+        ),
+        Confidence = 1.0
+    )
+    # Filter to only two points to create zeros in between
+    mock_data <- mock_data[c(1, 6), ]
+
+    # Default (log_scaling = FALSE)
+    p_linear <- plot_top_species(mock_data, log_scaling = FALSE)
+    # Check y scale - should be linear (default)
+    expect_null(p_linear$scales$get_scales("y")) # Or check for absence of trans
+
+    # log_scaling = TRUE
+    p_log <- plot_top_species(mock_data, log_scaling = TRUE)
+
+    # In ggplot2, if a scale is added, it will be in p$scales
+    # We expect a scale with a pseudo_log transformation
+    y_scale <- p_log$scales$get_scales("y")
+    expect_false(is.null(y_scale))
+    expect_match(y_scale$trans$name, "pseudo_log")
+})

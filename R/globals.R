@@ -11,6 +11,7 @@ utils::globalVariables(c(
     "Begin Time (s)",
     "Start (s)",
     "begin_time_s",
+    "end_time_s",
     "file_name",
     "start_time",
     "n",
