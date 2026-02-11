@@ -10,50 +10,43 @@
 #' @examples
 #' parse_birdnet_filename_datetime("1STSMM2_20241105_050000.BirdNET.selection.table.txt")
 parse_birdnet_filename_datetime <- function(file_name) {
-  # 1) Extract the chunk that looks like: YYYYMMDD_HHMMSS
-  #    We'll do so with a regex capturing group
-  #    We'll look for digits_ digits, i.e. something like 20241105_050000
-  pattern <- "(\\d{8}_\\d{6})"
+  # 1) Try Format 1: YYYYMMDD_HHMMSS
+  pattern1 <- "(\\d{8}_\\d{6})"
+  match_data1 <- regexec(pattern1, file_name)
+  match_result1 <- regmatches(file_name, match_data1)
 
-  # Use regexec/regmatches instead of stringr::str_match
-  match_data <- regexec(pattern, file_name)
-  match_result <- regmatches(file_name, match_data)
+  if (length(match_result1[[1]]) > 0) {
+    match <- match_result1[[1]][1]
+    date_time_parts <- strsplit(match, "_")[[1]]
+    date_part <- date_time_parts[1]
+    time_part <- date_time_parts[2]
 
-  if (length(match_result[[1]]) == 0) {
-    stop("Filename does not match the expected pattern YYYYMMDD_HHMMSS.")
+    date_formatted <- paste0(
+      substr(date_part, 1, 4), "-",
+      substr(date_part, 5, 6), "-",
+      substr(date_part, 7, 8)
+    )
+    time_formatted <- paste0(
+      substr(time_part, 1, 2), ":",
+      substr(time_part, 3, 4), ":",
+      substr(time_part, 5, 6)
+    )
+
+    return(lubridate::ymd_hms(paste(date_formatted, time_formatted), tz = "UTC"))
   }
 
-  # The first element is the full match, second is the capturing group
-  # However, since our pattern is just the capturing group, full match == group.
-  # But regexec returns full match at index 1 and groups at 2+.
-  # Let's just use the full match if it found it.
-  match <- match_result[[1]][1]
+  # 2) Try Format 2: ISO-like YYYYMMDDTHHMMSS (e.g. 20190417T035757)
+  pattern2 <- "(\\d{8}T\\d{6})"
+  match_data2 <- regexec(pattern2, file_name)
+  match_result2 <- regmatches(file_name, match_data2)
 
-  # 2) We have a string like "20241105_050000"
-  #    Let's split it at the underscore.
-  date_time_parts <- strsplit(match, "_")[[1]]
-  date_part <- date_time_parts[1] # e.g. "20241105"
-  time_part <- date_time_parts[2] # e.g. "050000"
+  if (length(match_result2[[1]]) > 0) {
+    match <- match_result2[[1]][1]
+    # lubridate::ymd_hms can often parse T format directly
+    return(lubridate::ymd_hms(match, tz = "UTC"))
+  }
 
-  # 3) Convert date_part into "YYYY-MM-DD" and time_part into "HH:MM:SS"
-  #    date_part "20241105" => "2024-11-05"
-  #    time_part "050000"  => "05:00:00"
-  date_formatted <- paste0(
-    substr(date_part, 1, 4), "-",
-    substr(date_part, 5, 6), "-",
-    substr(date_part, 7, 8)
-  )
-  time_formatted <- paste0(
-    substr(time_part, 1, 2), ":",
-    substr(time_part, 3, 4), ":",
-    substr(time_part, 5, 6)
-  )
-
-  # 4) Combine into one string and parse with lubridate
-  date_time_str <- paste(date_formatted, time_formatted)
-  start_time <- lubridate::ymd_hms(date_time_str, tz = "UTC") # or your local tz
-
-  start_time
+  stop("Filename does not match known pattern (YYYYMMDD_HHMMSS or YYYYMMDDTHHMMSS).")
 }
 
 #' Convert time values to numeric seconds
@@ -103,6 +96,20 @@ ensure_numeric_seconds <- function(x) {
   # Fallback: try coercing to numeric
   warning("Could not convert time column to numeric seconds. Attempting direct coercion.")
   as.numeric(x)
+}
+
+#' Coerce a vector to numeric, handling characters and suppressing warnings
+#'
+#' @param x A vector to convert
+#' @return A numeric vector
+#' @noRd
+coerce_to_numeric <- function(x) {
+  if (is.numeric(x)) {
+    return(x)
+  }
+  # If it's character, we try to convert.
+  # We suppress warnings because NAs are expected for non-numeric strings
+  suppressWarnings(as.numeric(as.character(x)))
 }
 
 #' Read a single BirdNET selection table file
@@ -196,9 +203,19 @@ read_birdnet_file <- function(file_path, tz = "UTC") {
   }
 
   # Standardize "Confirmation" or "Confidence"
-  # Raven: "Confidence", CSV: "Confidence" usually, but sometimes could be different?
-  # Let's assume Confidence is standard, if not we can add logic here.
-  # Ensure column names are clean? For now we just focus on the time columns required for processing.
+  # Raven: "Confidence", CSV: "Confidence" usually
+  # FORCE numeric to avoid bind_rows type mismatch if some files have 'NA' as strings or are empty
+  if ("Confidence" %in% names(df)) {
+    df <- df |> dplyr::mutate(Confidence = coerce_to_numeric(Confidence))
+  }
+
+  # Also ensure other likely numeric columns are numeric to prevent downstream bind_rows issues
+  numeric_cols <- c("Selection", "Low Freq (Hz)", "High Freq (Hz)")
+  for (col in numeric_cols) {
+    if (col %in% names(df)) {
+      df[[col]] <- coerce_to_numeric(df[[col]])
+    }
+  }
 
   # add columns
   df |>

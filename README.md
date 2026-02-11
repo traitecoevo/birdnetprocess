@@ -1,7 +1,7 @@
 birdnetprocess
 ================
 Will Cornwell
-2026-01-28
+2026-02-11
 
 # birdnetprocess
 
@@ -19,8 +19,31 @@ results which can be overwhelming in their volume.
 ``` r
 # install.packages("devtools") # if needed
 devtools::install_github("traitecoevo/birdnetprocess")
-#> Skipping install of 'birdnetprocess' from a github remote, the SHA1 (ad9b8330) has not changed since last install.
-#>   Use `force = TRUE` to force installation
+#> Downloading GitHub repo traitecoevo/birdnetprocess@HEAD
+#> viridisLite (0.4.2 -> 0.4.3) [CRAN]
+#> dplyr       (1.1.4 -> 1.2.0) [CRAN]
+#> timechange  (0.3.0 -> 0.4.0) [CRAN]
+#> ggplot2     (4.0.1 -> 4.0.2) [CRAN]
+#> lubridate   (1.9.4 -> 1.9.5) [CRAN]
+#> Installing 5 packages: viridisLite, dplyr, timechange, ggplot2, lubridate
+#> 
+#> The downloaded binary packages are in
+#>  /var/folders/1k/cskklf914vd5m3stdrxqyx300000gp/T//Rtmp04VOrL/downloaded_packages
+#> Adding 'dplyr_1.2.0.tgz' to the cache
+#> Adding 'ggplot2_4.0.2.tgz' to the cache
+#> Adding 'lubridate_1.9.5.tgz' to the cache
+#> Adding 'timechange_0.4.0.tgz' to the cache
+#> Adding 'viridisLite_0.4.3.tgz' to the cache
+#> ── R CMD build ────────────────────────────────────────────────────
+#>      checking for file ‘/private/var/folders/1k/cskklf914vd5m3stdrxqyx300000gp/T/Rtmp04VOrL/remotes694cf2caa74/traitecoevo-birdnetprocess-2d5e3f4/DESCRIPTION’ ...  ✔  checking for file ‘/private/var/folders/1k/cskklf914vd5m3stdrxqyx300000gp/T/Rtmp04VOrL/remotes694cf2caa74/traitecoevo-birdnetprocess-2d5e3f4/DESCRIPTION’
+#>   ─  preparing ‘birdnetprocess’:
+#>      checking DESCRIPTION meta-information ...  ✔  checking DESCRIPTION meta-information
+#>   ─  checking for LF line-endings in source and make files and shell scripts
+#>   ─  checking for empty or unneeded directories
+#>   ─  building ‘birdnetprocess_0.0.0.9000.tar.gz’
+#>      
+#> 
+#> Adding 'birdnetprocess_0.0.0.9000.tgz' to the cache
 ```
 
 ## Example Usage
@@ -55,14 +78,12 @@ library(birdnetprocess)
 library(dplyr)
 
 # Use example data included in the package
-raven_path <- system.file("extdata", "example_raven.txt", package = "birdnetprocess")
-csv_path <- system.file("extdata", "example_birdnet.csv", package = "birdnetprocess")
+raven_path <- system.file("extdata", "SiteA_20240101_120000.BirdNET.selection.table.txt", package = "birdnetprocess")
+csv_path <- system.file("extdata", "SiteA_20240101_120000.BirdNET.results.csv", package = "birdnetprocess")
 
-# Create a mock filename with a timestamp for demonstration
-# (The example files in extdata don't have timestamps in filenames, so we mock it for the reader)
-# In real use, your files should look like: SiteA_20240101_120000.BirdNET.selection.table.txt
+# The example files in extdata now have valid timestamps in their filenames:
+# SiteA_20240101_120000.BirdNET.selection.table.txt
 
-# We'll just read them directly for now; start_time will be NA if filename doesn't match
 df_raven <- read_birdnet_file(raven_path)
 df_csv <- read_birdnet_file(csv_path)
 
@@ -162,6 +183,28 @@ birdnetprocess::plot_top_species(
 <figure>
 <img src="man/figures/day_night_stream.png" alt="Day Night Patterns" />
 <figcaption aria-hidden="true">Day Night Patterns</figcaption>
+</figure>
+
+### 6. Custom Time Binning
+
+By default, trends are plotted by the hour. However, you can use the
+`unit` parameter to aggregate detections into any time interval
+supported by `lubridate` (e.g., `"10 min"`, `"30 min"`, `"3 hours"`).
+This is useful for high-resolution activity analysis.
+
+``` r
+# Plot trends with 10-minute binning
+birdnetprocess::plot_top_species(
+  data,
+  n_top_species = 5,
+  confidence = 0.5,
+  unit = "10 min"
+)
+```
+
+<figure>
+<img src="man/figures/ten_min_trends.png" alt="10-Minute Trends" />
+<figcaption aria-hidden="true">10-Minute Trends</figcaption>
 </figure>
 
 If you have a folder full of BirdNET files, use `read_birdnet_folder()`

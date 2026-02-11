@@ -37,4 +37,15 @@ if (requireNamespace("suncalc", quietly = TRUE)) {
     warning("suncalc package not installed. Skipping Day/Night plot.")
 }
 
+# 3. 10-Minute Trends Plot
+message("Generating 10-Minute Trends Plot...")
+p3 <- plot_top_species(
+    data,
+    n_top_species = 5,
+    confidence = 0.5,
+    unit = "10 min"
+)
+ggsave("man/figures/ten_min_trends.png", p3, width = 10, height = 6)
+message("Saved man/figures/ten_min_trends.png")
+
 message("Done.")
