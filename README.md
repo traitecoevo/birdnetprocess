@@ -20,16 +20,8 @@ results which can be overwhelming in their volume.
 # install.packages("devtools") # if needed
 devtools::install_github("traitecoevo/birdnetprocess")
 #> Using GitHub PAT from the git credential store.
-#> Downloading GitHub repo traitecoevo/birdnetprocess@HEAD
-#> ── R CMD build ──────────────────────────
-#>      checking for file ‘/private/var/folders/1k/cskklf914vd5m3stdrxqyx300000gp/T/RtmptpJSAs/remotesce65569e2f8b/traitecoevo-birdnetprocess-d682817/DESCRIPTION’ ...  ✔  checking for file ‘/private/var/folders/1k/cskklf914vd5m3stdrxqyx300000gp/T/RtmptpJSAs/remotesce65569e2f8b/traitecoevo-birdnetprocess-d682817/DESCRIPTION’
-#>   ─  preparing ‘birdnetprocess’:
-#>      checking DESCRIPTION meta-information ...  ✔  checking DESCRIPTION meta-information
-#>   ─  checking for LF line-endings in source and make files and shell scripts
-#>   ─  checking for empty or unneeded directories
-#>   ─  building ‘birdnetprocess_0.0.0.9000.tar.gz’
-#>      
-#> 
+#> Skipping install of 'birdnetprocess' from a github remote, the SHA1 (d6828172) has not changed since last install.
+#>   Use `force = TRUE` to force installation
 ```
 
 ## Data Requirements
