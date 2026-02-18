@@ -1,7 +1,7 @@
 birdnetprocess
 ================
 Will Cornwell
-2026-02-11
+2026-02-18
 
 # birdnetprocess
 
@@ -19,23 +19,10 @@ results which can be overwhelming in their volume.
 ``` r
 # install.packages("devtools") # if needed
 devtools::install_github("traitecoevo/birdnetprocess")
+#> Using GitHub PAT from the git credential store.
 #> Downloading GitHub repo traitecoevo/birdnetprocess@HEAD
-#> viridisLite (0.4.2 -> 0.4.3) [CRAN]
-#> dplyr       (1.1.4 -> 1.2.0) [CRAN]
-#> timechange  (0.3.0 -> 0.4.0) [CRAN]
-#> ggplot2     (4.0.1 -> 4.0.2) [CRAN]
-#> lubridate   (1.9.4 -> 1.9.5) [CRAN]
-#> Installing 5 packages: viridisLite, dplyr, timechange, ggplot2, lubridate
-#> 
-#> The downloaded binary packages are in
-#>  /var/folders/1k/cskklf914vd5m3stdrxqyx300000gp/T//Rtmp04VOrL/downloaded_packages
-#> Adding 'dplyr_1.2.0.tgz' to the cache
-#> Adding 'ggplot2_4.0.2.tgz' to the cache
-#> Adding 'lubridate_1.9.5.tgz' to the cache
-#> Adding 'timechange_0.4.0.tgz' to the cache
-#> Adding 'viridisLite_0.4.3.tgz' to the cache
-#> ── R CMD build ────────────────────────────────────────────────────
-#>      checking for file ‘/private/var/folders/1k/cskklf914vd5m3stdrxqyx300000gp/T/Rtmp04VOrL/remotes694cf2caa74/traitecoevo-birdnetprocess-2d5e3f4/DESCRIPTION’ ...  ✔  checking for file ‘/private/var/folders/1k/cskklf914vd5m3stdrxqyx300000gp/T/Rtmp04VOrL/remotes694cf2caa74/traitecoevo-birdnetprocess-2d5e3f4/DESCRIPTION’
+#> ── R CMD build ──────────────────────────
+#>      checking for file ‘/private/var/folders/1k/cskklf914vd5m3stdrxqyx300000gp/T/RtmptpJSAs/remotesce65569e2f8b/traitecoevo-birdnetprocess-d682817/DESCRIPTION’ ...  ✔  checking for file ‘/private/var/folders/1k/cskklf914vd5m3stdrxqyx300000gp/T/RtmptpJSAs/remotesce65569e2f8b/traitecoevo-birdnetprocess-d682817/DESCRIPTION’
 #>   ─  preparing ‘birdnetprocess’:
 #>      checking DESCRIPTION meta-information ...  ✔  checking DESCRIPTION meta-information
 #>   ─  checking for LF line-endings in source and make files and shell scripts
@@ -43,98 +30,53 @@ devtools::install_github("traitecoevo/birdnetprocess")
 #>   ─  building ‘birdnetprocess_0.0.0.9000.tar.gz’
 #>      
 #> 
-#> Adding 'birdnetprocess_0.0.0.9000.tgz' to the cache
 ```
 
-## Example Usage
+## Data Requirements
 
-#### 1. Extract Start DateTime from a BirdNET Filename
+BirdNET produces one output file per audio recording. The package
+supports both common output formats:
 
-The function `parse_birdnet_filename_datetime()` assumes filenames
-follow this pattern:
-`SOMETHING_YYYYMMDD_HHMMSS.BirdNET.selection.table.txt` or similar.
+- **Raven selection tables** (`.txt`, tab-delimited) — must contain
+  `Begin Time (s)`
+- **BirdNET Analyzer CSV output** (`.csv`, comma-separated) — must
+  contain `Start (s)` or `Begin Time (s)`
 
-Note that this assumes that you’ve set the time right on your recording
-device and that the filename reflects the true time for the start of
-that time segment.
+For automatic time processing, filenames **must** contain a timestamp in
+`YYYYMMDD_HHMMSS` format (e.g.,
+`SL21_20260118_112124.BirdNET.results.csv`).
 
-The package now supports both common birdnet output types:
+------------------------------------------------------------------------
 
-- **Raven selection tables** (`.txt`, tab-delimited)
+## Use Case 1: Single Site Analysis
 
-- **BirdNET Analyzer CSV output** (`.csv`, comma-separated)
+This is the most common scenario — you have one recorder deployed at one
+location and a folder of BirdNET output files. In this example the
+folder is `detections_SL21/` containing ~46 CSV result files.
 
-#### 2. Read a Single BirdNET File
+### Step 1: Read the data
 
-Use `read_birdnet_file()` to read one BirdNET selection table.
-
-This will: \* Detect if it’s a Raven table (tab-separated) or CSV. \*
-Parse the filename for the start time. \* Standardize column names
-(e.g., `Begin Time (s)`). \* Add `start_time` and
-`recording_window_time` columns.
+Use `read_birdnet_folder()` to read all BirdNET files in a single folder
+and combine them into one tibble:
 
 ``` r
 library(birdnetprocess)
 library(dplyr)
 
-# Use example data included in the package
-raven_path <- system.file("extdata", "SiteA_20240101_120000.BirdNET.selection.table.txt", package = "birdnetprocess")
-csv_path <- system.file("extdata", "SiteA_20240101_120000.BirdNET.results.csv", package = "birdnetprocess")
-
-# The example files in extdata now have valid timestamps in their filenames:
-# SiteA_20240101_120000.BirdNET.selection.table.txt
-
-df_raven <- read_birdnet_file(raven_path)
-df_csv <- read_birdnet_file(csv_path)
-
-head(df_raven)
-#> # A tibble: 2 × 13
-#>   Selection View          Channel begin_time_s end_time_s `Low Freq (Hz)`
-#>       <dbl> <chr>           <dbl>        <dbl>      <dbl>           <dbl>
-#> 1         1 Spectrogram 1       1          1.5        4.5             150
-#> 2         2 Spectrogram 1       1          5          8               150
-#> # ℹ 7 more variables: `High Freq (Hz)` <dbl>, `Common Name` <chr>,
-#> #   `Species Code` <chr>, Confidence <dbl>, file_name <chr>, start_time <dttm>,
-#> #   recording_window_time <dttm>
-head(df_csv)
-#> # A tibble: 2 × 9
-#>   begin_time_s end_time_s `Scientific name`  `Common Name`  Confidence
-#>          <dbl>      <dbl> <chr>              <chr>               <dbl>
-#> 1          1.5        4.5 Turdus migratorius American Robin       0.95
-#> 2          5          8   Melospiza melodia  Song Sparrow         0.9 
-#> # ℹ 4 more variables: `Species Code` <chr>, file_name <chr>, start_time <dttm>,
-#> #   recording_window_time <dttm>
+data <- read_birdnet_folder("detections_SL21")
 ```
 
-**Data Requirements:** 1. **Filename Format**: For automatic time
-processing, filenames **MUST** contain a timestamp in the format
-`YYYYMMDD_HHMMSS` (e.g., `MySite_20240320_060000.BirdNET.txt`). 2.
-**File Format**: \* **Raven Selection Table**: Tab-delimited `.txt`.
-Must have `Begin Time (s)`. \* **CSV**: Comma-delimited `.csv`. Must
-have `Start (s)` or `Begin Time (s)`.
+**When to use `recursive`?** By default `recursive = FALSE`, which reads
+only the files directly in that folder. This is correct for standard
+BirdNET output which is flat. Set `recursive = TRUE` only if your
+results are split into sub-directories within the site folder.
 
-#### 3. Quick Visualization and Statistics
+### Step 2: Quick summary
 
-`plot_species_counts` and `summarise_detections` provide immediate
-insights into the detections in your data.
-
-First, let’s read the data from a folder of results (e.g.,
-`detections_SL21`):
+Get a snapshot of the dataset with `summarise_detections()`:
 
 ``` r
-library(birdnetprocess)
-library(dplyr)
-
-# Read all files in the folder
-data <- read_birdnet_folder("detections_SL21", recursive = FALSE)
-```
-
-**Quick Stats**
-
-Get a summary of your dataset:
-
-``` r
-birdnetprocess::summarise_detections(data, confidence = 0.7)
+summarise_detections(data, confidence = 0.7)
 # # A tibble: 7 × 2
 #   statistic                   value
 #   <chr>                       <chr>
@@ -147,12 +89,13 @@ birdnetprocess::summarise_detections(data, confidence = 0.7)
 # 7 Average detections per hour 178.7111
 ```
 
-**Quick Calls**
+### Step 3: Visualise
 
-Visualize species counts:
+**Species counts** — a quick bar chart of how many detections per
+species:
 
 ``` r
-birdnetprocess::plot_species_counts(data, confidence = 0.5)
+plot_species_counts(data, confidence = 0.5)
 ```
 
 <figure>
@@ -161,21 +104,16 @@ alt="Top 10 Calls" />
 <figcaption aria-hidden="true">Top 10 Calls</figcaption>
 </figure>
 
-### 5. Visualizing Daily Patterns (Day/Night)
-
-You can visualize daily activity patterns with day/night shading (using
-the `suncalc` package). Note that you must provide the latitude,
-longitude, and timezone for the shading to work.
+**Activity trends with day/night shading** — requires latitude,
+longitude, and timezone for the `suncalc` shading:
 
 ``` r
-# Generate plot with day/night shading
-# Example coordinates for Sydney region
-birdnetprocess::plot_top_species(
+plot_top_species(
   data,
   n_top_species = 10,
   confidence = 0.6,
-  latitude = -32.44, # Required for suncalc
-  longitude = 152.24, # Required for suncalc
+  latitude = -32.44,
+  longitude = 152.24,
   tz = "Australia/Sydney"
 )
 ```
@@ -185,16 +123,12 @@ birdnetprocess::plot_top_species(
 <figcaption aria-hidden="true">Day Night Patterns</figcaption>
 </figure>
 
-### 6. Custom Time Binning
-
-By default, trends are plotted by the hour. However, you can use the
-`unit` parameter to aggregate detections into any time interval
-supported by `lubridate` (e.g., `"10 min"`, `"30 min"`, `"3 hours"`).
-This is useful for high-resolution activity analysis.
+**Custom time binning** — by default trends are plotted hourly. Use the
+`unit` parameter for finer resolution (any interval `lubridate`
+supports, e.g., `"10 min"`, `"30 min"`, `"3 hours"`):
 
 ``` r
-# Plot trends with 10-minute binning
-birdnetprocess::plot_top_species(
+plot_top_species(
   data,
   n_top_species = 5,
   confidence = 0.5,
@@ -207,9 +141,86 @@ birdnetprocess::plot_top_species(
 <figcaption aria-hidden="true">10-Minute Trends</figcaption>
 </figure>
 
-If you have a folder full of BirdNET files, use `read_birdnet_folder()`
-to read them all at once. It will return a single combined tibble (as
-shown above).
+------------------------------------------------------------------------
+
+## Use Case 2: Multi-Site Project
+
+When you have multiple recorders deployed across different locations,
+BirdNET typically outputs results into separate folders — one per site.
+In this example we have four site folders: `detections_SL21/`,
+`detections_SL25/`, `detections_SL42/`, and `detections_SL_swamp/`.
+
+### Step 1: Identify site folders
+
+You can hard-code the paths or discover them automatically:
+
+``` r
+library(birdnetprocess)
+library(dplyr)
+
+# Option A: Hard-code folder paths
+folders <- c(
+  "detections_SL21", "detections_SL25",
+  "detections_SL42", "detections_SL_swamp"
+)
+
+# Option B: Auto-discover folders matching a pattern
+all_dirs <- list.dirs(".", full.names = FALSE, recursive = FALSE)
+folders <- all_dirs[grepl("^detections_", all_dirs)]
+```
+
+### Step 2: Read all sites
+
+Use `read_birdnet_sites()` — it calls `read_birdnet_folder()` for each
+path and adds a **`Site` column** derived from the folder name:
+
+``` r
+all_data <- read_birdnet_sites(folders)
+
+# Check the Site column
+unique(all_data$Site)
+# [1] "detections_SL21"    "detections_SL25"
+# [3] "detections_SL42"    "detections_SL_swamp"
+```
+
+### Step 3: Compare across sites
+
+Use `facet_by = "Site"` in `plot_top_species()` to get side-by-side
+panels — one per site:
+
+``` r
+plot_top_species(
+  all_data,
+  n_top_species = 5,
+  confidence = 0.5,
+  facet_by = "Site",
+  latitude = -32.44,
+  longitude = 152.24,
+  tz = "Australia/Sydney"
+)
+```
+
+This produces a faceted plot with each site in its own panel, making it
+easy to compare species activity across locations.
+
+------------------------------------------------------------------------
+
+## Quick Reference: Which function should I use?
+
+| Scenario | Function | `recursive` | Adds `Site`? |
+|----|----|:--:|:--:|
+| One folder of BirdNET results | `read_birdnet_folder()` | `FALSE` (default) | No |
+| One folder with sub-directories inside | `read_birdnet_folder()` | `TRUE` | No |
+| Multiple site folders for comparison | `read_birdnet_sites()` | `FALSE` (default) | **Yes** |
+
+**Rule of thumb:**
+
+- If you’re working with **one site**, use `read_birdnet_folder()`.
+- If you’re **comparing sites**, use `read_birdnet_sites()` — it gives
+  you the `Site` column you need for `facet_by = "Site"` in plotting
+  functions.
+
+------------------------------------------------------------------------
 
 ### Dependencies
 

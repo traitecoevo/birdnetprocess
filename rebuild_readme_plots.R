@@ -6,12 +6,12 @@ library(dplyr)
 library(ggplot2)
 
 # Check if data exists
-if (!dir.exists("detections_SL21")) {
-    stop("Directory 'detections_SL21' not found. Cannot rebuild plots.")
+if (!dir.exists("example_data/detections_SL21")) {
+    stop("Directory 'example_data/detections_SL21' not found. Cannot rebuild plots.")
 }
 
-message("Reading data from detections_SL21...")
-data <- read_birdnet_folder("detections_SL21", recursive = FALSE)
+message("Reading data from example_data/detections_SL21...")
+data <- read_birdnet_folder("example_data/detections_SL21", recursive = FALSE)
 
 # 1. Top Species Counts (Log Scale)
 message("Generating Top Species Counts Plot...")
