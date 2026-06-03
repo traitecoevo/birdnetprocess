@@ -27,5 +27,10 @@ utils::globalVariables(c(
     "confidence_bin",
     "date",
     "End Time (s)",
-    "End (s)"
+    "End (s)",
+    "abundance",
+    "species",
+    "matched_layer",
+    "n_detections",
+    "max_confidence"
 ))

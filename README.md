@@ -197,6 +197,79 @@ easy to compare species activity across locations.
 
 ------------------------------------------------------------------------
 
+## Use Case 3: Range-filtering a site & one-shot reports
+
+BirdNET often proposes species that don’t actually occur at the
+recorder’s location — geographic false positives (e.g. eastern/coastal
+birds at an arid inland site). If you have a species-distribution-model
+raster stack (one range-masked abundance layer per species, named in
+`lower_case_underscore` style), `filter_by_range()` drops detections
+whose location falls **outside** a species’ modelled range.
+
+``` r
+library(birdnetprocess)
+library(terra)
+
+data <- read_birdnet_folder("wilddeserts")
+abund <- terra::rast("nsw_abundance_stack_3km.tif")
+
+filtered <- filter_by_range(
+  data, abund,
+  latitude = -29.229286, longitude = 141.286856
+)
+
+# Which species were dropped / kept / not assessed?
+attr(filtered, "range_report")
+```
+
+The rule: a species is removed only if it has a matching range-map layer
+**and** the site is outside it. Non-birds (insects, mammals,
+anthropogenic labels) and birds with no layer (e.g. arid specialists) are
+always kept and flagged `unassessed: no range map`. Use `name_overrides`
+for species the name-matcher misses, and `min_abundance` to also prune
+very-low-probability species.
+
+### `site_report()` — report + plot set in one call
+
+`site_report()` wraps the whole workflow: it range-filters (if you pass a
+raster), summarises, builds the standard plot set, and — when given
+`output_dir` — writes the plots plus a `species_filter_report.csv` to
+disk.
+
+``` r
+res <- site_report(
+  data,
+  latitude = -29.229286, longitude = 141.286856,
+  abundance_raster = abund,
+  tz = "Australia/Sydney",
+  output_dir = "wilddeserts_plots/filtered"
+)
+
+res$report         # per-species kept/removed/unassessed table
+res$summary        # summarise_detections() output
+res$plots$daynight # ggplot objects, also saved as PNGs
+```
+
+Range filtering is optional — omit `abundance_raster` to get the summary
+and plots with no filtering. The abundance raster is supplied by you (it
+is not bundled), and `terra` is only needed when you range-filter.
+
+If the recorder was running before it reached the site (e.g. test
+recordings made elsewhere), pass `start_after` / `end_before` to trim to
+the actual deployment window — these run before range filtering and also
+remove non-bird sounds (voices, vehicles) that range filtering leaves in:
+
+``` r
+site_report(
+  data,
+  latitude = -29.229286, longitude = 141.286856,
+  abundance_raster = abund, tz = "Australia/Sydney",
+  start_after = "2026-05-26"
+)
+```
+
+------------------------------------------------------------------------
+
 ## Quick Reference: Which function should I use?
 
 | Scenario | Function | `recursive` | Adds `Site`? |

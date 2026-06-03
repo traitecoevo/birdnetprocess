@@ -11,3 +11,9 @@
 ^FMANC_.*\.txt$
 ^WCON1_.*\.csv$
 ^Rplots\.pdf$
+^\.claude$
+^example_data$
+^nsw_abundance_stack_3km\.tif$
+^wilddeserts$
+^wilddeserts_plots$
+^\.Rhistory$

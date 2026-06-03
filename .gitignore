@@ -15,3 +15,10 @@ analysis/
 *.png
 !man/figures/*.png
 verify_local_data.R
+
+# Local working data (not part of the package)
+nsw_abundance_stack_3km.tif
+wilddeserts/
+wilddeserts_plots/
+Rplots.pdf
+readme.html
