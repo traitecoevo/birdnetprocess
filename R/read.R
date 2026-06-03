@@ -143,17 +143,11 @@ coerce_to_numeric <- function(x) {
 #' }
 read_birdnet_file <- function(file_path, tz = "UTC") {
   file_name <- basename(file_path)
+  # Try the selection-table filename first. If it has no timestamp we fall back
+  # to the per-row `Begin Path` column further down, so don't warn yet.
   start_time <- tryCatch(
-    {
-      parse_birdnet_filename_datetime(file_name)
-    },
-    error = function(e) {
-      warning(paste(
-        "Could not parse datetime from filename:", file_name,
-        "- start_time will be NA. Ensure filename matches 'YYYYMMDD_HHMMSS' pattern."
-      ))
-      return(as.POSIXct(NA, tz = tz))
-    }
+    parse_birdnet_filename_datetime(file_name),
+    error = function(e) as.POSIXct(NA, tz = tz)
   )
 
   # Check file extension to detect format
@@ -215,6 +209,59 @@ read_birdnet_file <- function(file_path, tz = "UTC") {
     if (col %in% names(df)) {
       df[[col]] <- coerce_to_numeric(df[[col]])
     }
+  }
+
+  # Determine the recording start time for each detection.
+  #
+  # Normal case: the selection-table filename carries a YYYYMMDD_HHMMSS stamp,
+  # so every detection shares one `start_time` and
+  # `recording_window_time = start_time + begin_time_s`.
+  #
+  # Combined Raven exports: a single table (e.g. "BirdNET_SelectionTable.txt")
+  # spans many recordings and the filename has no stamp. Here each row's source
+  # wav is named in `Begin Path` (e.g. ".../CES-1_20260526_164700.wav") and
+  # `File Offset (s)` is the offset *within that wav* (whereas `begin_time_s` is
+  # cumulative across the concatenated files). So we parse the per-row start
+  # from `Begin Path` and add the file offset.
+  if (is.na(start_time) && "Begin Path" %in% names(df)) {
+    wav_names <- basename(as.character(df[["Begin Path"]]))
+    uniq <- unique(wav_names)
+    parsed <- lapply(uniq, function(w) {
+      tryCatch(parse_birdnet_filename_datetime(w),
+        error = function(e) as.POSIXct(NA, tz = "UTC")
+      )
+    })
+    names(parsed) <- uniq
+    per_row_start <- do.call(c, unname(parsed[wav_names]))
+
+    if (!all(is.na(per_row_start))) {
+      file_offset <- if ("File Offset (s)" %in% names(df)) {
+        ensure_numeric_seconds(df[["File Offset (s)"]])
+      } else {
+        df$begin_time_s
+      }
+      message(
+        "read_birdnet_file: '", file_name, "' has no timestamp in its name; ",
+        "derived recording times from the 'Begin Path' column (",
+        length(uniq), " source recordings)."
+      )
+      return(
+        df |>
+          dplyr::mutate(
+            file_name = file_name,
+            start_time = per_row_start,
+            recording_window_time = per_row_start + file_offset
+          )
+      )
+    }
+  }
+
+  if (is.na(start_time)) {
+    warning(paste(
+      "Could not parse datetime from filename:", file_name,
+      "- start_time will be NA. Ensure filename matches 'YYYYMMDD_HHMMSS'",
+      "or that detections carry a parseable 'Begin Path'."
+    ))
   }
 
   # add columns
