@@ -17,9 +17,12 @@ analysis/
 verify_local_data.R
 
 # Local working data (not part of the package)
+example_data/
+make_play_plots.R
 nsw_abundance_stack_3km.tif
 wilddeserts/
 wilddeserts_plots/
 wilddeserts2-ces1/
+wd3_plots/
 Rplots.pdf
 readme.html

@@ -13,11 +13,12 @@ site_report(
   output_dir = NULL,
   site_name = NULL,
   n_top_species = 10,
-  tz = "UTC",
+  tz = "Australia/Sydney",
   start_after = NULL,
   end_before = NULL,
   min_abundance = 0,
-  name_overrides = NULL
+  name_overrides = NULL,
+  keep_species = NULL
 )
 }
 \arguments{
@@ -41,7 +42,7 @@ to. Created if it does not exist. If \code{NULL}, nothing is written.}
 
 \item{n_top_species}{Number of top species for the activity plots. Default \code{10}.}
 
-\item{tz}{Time zone for day/night shading, e.g. \code{"Australia/Sydney"}.}
+\item{tz}{Time zone for day/night shading. Default \code{"Australia/Sydney"}.}
 
 \item{start_after, end_before}{Optional deployment-window bounds. Detections
 with \code{recording_window_time} before \code{start_after} or after
@@ -53,6 +54,9 @@ in UTC, matching the times produced by \code{\link{read_birdnet_file}}).}
 \item{min_abundance}{Passed to \code{\link{filter_by_range}}. Default \code{0}.}
 
 \item{name_overrides}{Passed to \code{\link{filter_by_range}}.}
+
+\item{keep_species}{Passed to \code{\link{filter_by_range}}: common names to
+always keep regardless of modelled range (e.g. nomadic waterbirds).}
 }
 \value{
 Invisibly, a list with elements \code{report} (per-species filter report,

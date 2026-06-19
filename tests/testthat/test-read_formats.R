@@ -43,3 +43,55 @@ test_that("read_birdnet_file handles filenames with timestamps", {
     expect_equal(df$start_time[1], as.POSIXct("2024-01-01 12:00:00", tz = "UTC"))
     expect_equal(df$recording_window_time[1], df$start_time[1] + 1.5)
 })
+
+test_that("read_birdnet_file derives times from Begin Path when filename lacks a timestamp", {
+    # Combined Raven export: one timestamp-less filename spanning two recordings.
+    # The per-recording start lives in `Begin Path`; `File Offset (s)` is the
+    # offset within that wav, while `Begin Time (s)` is cumulative across files.
+    header <- c(
+        "Selection", "Begin Time (s)", "End Time (s)", "Common Name",
+        "Confidence", "File Offset (s)", "Begin Path"
+    )
+    rows <- rbind(
+        c(1, 10, 13, "Galah", 0.9, 10, "/vol/REC_20240101_120000.wav"),
+        c(2, 30, 33, "Galah", 0.8, 30, "/vol/REC_20240101_120000.wav"),
+        # begin_time_s is cumulative (4000) with a gap; the true time must come
+        # from the wav stamp (13:00:00) + file offset (5) = 13:00:05.
+        c(3, 4000, 4003, "Emu", 0.7, 5, "/vol/REC_20240101_130000.wav")
+    )
+    path <- file.path(tempdir(), "BirdNET_SelectionTable.txt")
+    writeLines(
+        c(
+            paste(header, collapse = "\t"),
+            apply(rows, 1, paste, collapse = "\t")
+        ),
+        path
+    )
+
+    # Fallback succeeds, so no parse warning should be emitted.
+    expect_no_warning(df <- read_birdnet_file(path))
+
+    expect_false(any(is.na(df$start_time)))
+    expect_false(any(is.na(df$recording_window_time)))
+    expect_equal(df$recording_window_time[1], as.POSIXct("2024-01-01 12:00:10", tz = "UTC"))
+    # Uses File Offset (s), NOT the cumulative begin_time_s.
+    expect_equal(df$recording_window_time[3], as.POSIXct("2024-01-01 13:00:05", tz = "UTC"))
+    expect_equal(df$start_time[3], as.POSIXct("2024-01-01 13:00:00", tz = "UTC"))
+})
+
+test_that("read_birdnet_file still warns when neither filename nor Begin Path has a timestamp", {
+    header <- c("Selection", "Begin Time (s)", "End Time (s)", "Common Name", "Confidence")
+    rows <- rbind(c(1, 10, 13, "Galah", 0.9))
+    path <- file.path(tempdir(), "BirdNET_SelectionTable_notime.txt")
+    writeLines(
+        c(
+            paste(header, collapse = "\t"),
+            apply(rows, 1, paste, collapse = "\t")
+        ),
+        path
+    )
+
+    expect_warning(df <- read_birdnet_file(path), "Could not parse datetime")
+    expect_true(all(is.na(df$start_time)))
+    expect_true(all(is.na(df$recording_window_time)))
+})

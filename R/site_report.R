@@ -28,7 +28,7 @@
 #'        to. Created if it does not exist. If `NULL`, nothing is written.
 #' @param site_name Optional label for the site (used in messages / file names).
 #' @param n_top_species Number of top species for the activity plots. Default `10`.
-#' @param tz Time zone for day/night shading, e.g. `"Australia/Sydney"`.
+#' @param tz Time zone for day/night shading. Default `"Australia/Sydney"`.
 #' @param start_after,end_before Optional deployment-window bounds. Detections
 #'        with `recording_window_time` before `start_after` or after
 #'        `end_before` are dropped. Useful when the recorder was running before
@@ -37,6 +37,8 @@
 #'        in UTC, matching the times produced by \code{\link{read_birdnet_file}}).
 #' @param min_abundance Passed to \code{\link{filter_by_range}}. Default `0`.
 #' @param name_overrides Passed to \code{\link{filter_by_range}}.
+#' @param keep_species Passed to \code{\link{filter_by_range}}: common names to
+#'        always keep regardless of modelled range (e.g. nomadic waterbirds).
 #'
 #' @return Invisibly, a list with elements `report` (per-species filter report,
 #'         or `NULL` if no raster), `summary` (the
@@ -65,11 +67,12 @@ site_report <- function(data,
                         output_dir = NULL,
                         site_name = NULL,
                         n_top_species = 10,
-                        tz = "UTC",
+                        tz = "Australia/Sydney",
                         start_after = NULL,
                         end_before = NULL,
                         min_abundance = 0,
-                        name_overrides = NULL) {
+                        name_overrides = NULL,
+                        keep_species = NULL) {
   # 1. Deployment time window (optional): drop detections outside the period the
   # recorder was actually deployed at this site (e.g. recordings made before
   # the unit was moved into place).
@@ -83,7 +86,8 @@ site_report <- function(data,
       latitude = latitude,
       longitude = longitude,
       min_abundance = min_abundance,
-      name_overrides = name_overrides
+      name_overrides = name_overrides,
+      keep_species = keep_species
     )
     report <- attr(data_filtered, "range_report")
   } else {

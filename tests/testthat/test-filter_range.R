@@ -40,3 +40,21 @@ test_that("name_overrides lets an unmatched name be assessed", {
   expect_equal(rep$matched_layer[rep$species == "My Finch"], "zebra_finch")
   expect_match(rep$status[rep$species == "My Finch"], "kept")
 })
+
+test_that("keep_species keeps species outside modelled range", {
+  skip_if_not_installed("terra")
+  r <- make_test_raster()
+  d <- dplyr::tibble(
+    `Common Name` = c("Noisy Miner", "Noisy Miner", "Zebra Finch"),
+    Confidence = 0.9
+  )
+
+  out <- filter_by_range(
+    d, r, latitude = -29, longitude = 141,
+    keep_species = "Noisy Miner"
+  )
+  rep <- attr(out, "range_report")
+
+  expect_equal(nrow(out), 3)
+  expect_equal(rep$status[rep$species == "Noisy Miner"], "kept: manual override")
+})

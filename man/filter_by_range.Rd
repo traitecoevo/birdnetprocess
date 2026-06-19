@@ -11,6 +11,7 @@ filter_by_range(
   longitude,
   min_abundance = 0,
   name_overrides = NULL,
+  keep_species = NULL,
   species_col = "Common Name"
 )
 }
@@ -31,6 +32,12 @@ anything within the modelled range).}
 \item{name_overrides}{Optional named character vector mapping common names to
 layer names, for species the automatic matcher misses, e.g.
 \code{c("Some Bird" = "some_bird_layer")}.}
+
+\item{keep_species}{Optional character vector of common names to always keep,
+regardless of their modelled range. Useful for nomadic or vagrant
+species (e.g. waterbirds that irrupt into arid sites after rain) that
+the range-masked SDM wrongly excludes. Reported with status
+\code{"kept: manual override"}.}
 
 \item{species_col}{Name of the column holding common names. Default
 \code{"Common Name"}.}

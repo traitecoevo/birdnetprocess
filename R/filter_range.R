@@ -58,6 +58,11 @@ normalize_species_name <- function(x) {
 #' @param name_overrides Optional named character vector mapping common names to
 #'        layer names, for species the automatic matcher misses, e.g.
 #'        `c("Some Bird" = "some_bird_layer")`.
+#' @param keep_species Optional character vector of common names to always keep,
+#'        regardless of their modelled range. Useful for nomadic or vagrant
+#'        species (e.g. waterbirds that irrupt into arid sites after rain) that
+#'        the range-masked SDM wrongly excludes. Reported with status
+#'        `"kept: manual override"`.
 #' @param species_col Name of the column holding common names. Default
 #'        `"Common Name"`.
 #'
@@ -80,6 +85,7 @@ filter_by_range <- function(data,
                             longitude,
                             min_abundance = 0,
                             name_overrides = NULL,
+                            keep_species = NULL,
                             species_col = "Common Name") {
   if (!requireNamespace("terra", quietly = TRUE)) {
     stop(
@@ -169,6 +175,12 @@ filter_by_range <- function(data,
     abundance <= min_abundance ~ "removed: below threshold",
     TRUE ~ "kept: within modelled range"
   )
+
+  # Manual keep overrides: never drop these species, whatever their range says.
+  if (!is.null(keep_species)) {
+    forced <- counts$species %in% keep_species
+    status[forced] <- "kept: manual override"
+  }
 
   report <- counts |>
     dplyr::mutate(
