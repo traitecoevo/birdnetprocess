@@ -12,7 +12,7 @@ trends, site reports).
 from `birdnetEmbed`, which also plots but plots **embedding space**, not detections —
 if you're plotting a `.npz`, you're in the wrong repo.
 
-Full ownership table, seams, venvs, shared data: **`~/Documents/ECOACOUSTICS.md`**.
+Full ownership table, seams, venvs, shared data: **`~/Documents/ecoacoustics/ECOACOUSTICS.md`**.
 
 ## Gotchas
 
