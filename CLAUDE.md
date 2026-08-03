@@ -7,10 +7,13 @@ deployments. Remote: `traitecoevo/birdnetprocess`.
 
 **This repo owns:** the *downstream* end — reading detection output, range-filtering,
 summarising, and plotting it (confidence, counts, daily activity, stream, timeline,
-trends, site reports).
-**It does NOT own:** training, curation, evaluation, or embeddings. Note the distinction
-from `birdnetEmbed`, which also plots but plots **embedding space**, not detections —
-if you're plotting a `.npz`, you're in the wrong repo.
+trends, site reports), plus the `deployment.yml` **schema and reader**
+(`read_deployment()`) and the deployment **report renderer** (`birdnet_report()`).
+**It does NOT own:** training, curation, evaluation, embeddings, or *running* the
+detector. Note the distinction from `birdnetEmbed`, which also plots but plots
+**embedding space**, not detections — if you're plotting a `.npz`, you're in the wrong
+repo. The *values* for a given deployment, and the command that invokes the detector,
+live in `birdnet-deployments`; this repo only defines and consumes the schema.
 
 Full ownership table, seams, venvs, shared data: **`~/Documents/ecoacoustics/ECOACOUSTICS.md`**.
 

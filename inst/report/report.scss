@@ -1,0 +1,209 @@
+/*-- scss:defaults --*/
+// Deployment report styling. Recessive chrome, one accent family, so the
+// figures carry the colour and the page furniture stays out of the way.
+
+$font-family-sans-serif: system-ui, -apple-system, "Segoe UI", sans-serif !default;
+$body-bg: #f9f9f7 !default;
+$body-color: #0b0b0b !default;
+$link-color: #256abf !default;
+$code-bg: #f0efec !default;
+
+/*-- scss:rules --*/
+
+:root {
+  --bn-surface: #fcfcfb;
+  --bn-plane: #f9f9f7;
+  --bn-primary: #0b0b0b;
+  --bn-secondary: #52514e;
+  --bn-muted: #898781;
+  --bn-grid: #e1e0d9;
+  --bn-border: rgba(11, 11, 11, 0.10);
+  --bn-accent: #2a78d6;
+}
+
+// The reader's OS theme restyles the page furniture. Figures are rasters
+// rendered on a light surface, so they keep their own light card in either
+// mode rather than being flipped into something they were not drawn for.
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --bn-surface: #1a1a19;
+    --bn-plane: #0d0d0d;
+    --bn-primary: #ffffff;
+    --bn-secondary: #c3c2b7;
+    --bn-muted: #898781;
+    --bn-grid: #2c2c2a;
+    --bn-border: rgba(255, 255, 255, 0.10);
+    --bn-accent: #3987e5;
+  }
+}
+
+body {
+  background: var(--bn-plane);
+  color: var(--bn-primary);
+}
+
+// --- Header -----------------------------------------------------------------
+
+.bn-header {
+  border-bottom: 1px solid var(--bn-border);
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.bn-title {
+  font-size: 1.9rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0 0 0.35rem;
+  line-height: 1.15;
+}
+
+.bn-subtitle {
+  color: var(--bn-secondary);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.bn-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+  margin-top: 0.9rem;
+  font-size: 0.8rem;
+  color: var(--bn-muted);
+}
+
+.bn-meta dt {
+  font-weight: 500;
+  display: inline;
+}
+
+.bn-meta dd {
+  display: inline;
+  margin: 0 0 0 0.35rem;
+  color: var(--bn-secondary);
+}
+
+// --- Stat tiles -------------------------------------------------------------
+
+.bn-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.bn-tile {
+  background: var(--bn-surface);
+  border: 1px solid var(--bn-border);
+  border-radius: 6px;
+  padding: 0.9rem 1rem;
+}
+
+.bn-tile-label {
+  font-size: 0.75rem;
+  color: var(--bn-muted);
+  margin-bottom: 0.3rem;
+}
+
+.bn-tile-value {
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--bn-primary);
+}
+
+.bn-tile-note {
+  font-size: 0.75rem;
+  color: var(--bn-secondary);
+  margin-top: 0.25rem;
+}
+
+// --- Figures ----------------------------------------------------------------
+
+// Figures are light-surface PNGs; the card keeps them from floating on a dark
+// page with a hard edge.
+.quarto-figure,
+figure.figure,
+p:has(> img) {
+  background: #fcfcfb;
+  border: 1px solid var(--bn-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin: 1.25rem 0;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+// --- Tables -----------------------------------------------------------------
+
+// Wide content scrolls inside its own box; the page itself never scrolls
+// sideways.
+.bn-scroll,
+.gt_table_container {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+table {
+  font-size: 0.85rem;
+}
+
+// --- Notes ------------------------------------------------------------------
+
+.bn-note {
+  border-left: 2px solid var(--bn-grid);
+  padding: 0.15rem 0 0.15rem 0.85rem;
+  margin: 1rem 0;
+  color: var(--bn-secondary);
+  font-size: 0.85rem;
+}
+
+.bn-warn {
+  border-left-color: #ec835a;
+}
+
+h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-top: 2.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--bn-border);
+}
+
+h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--bn-secondary);
+  margin-top: 1.5rem;
+}
+
+// --- Disclosure -------------------------------------------------------------
+
+// Filtering housekeeping: present, checkable, and costing one line until asked.
+.bn-details {
+  margin: 1rem 0;
+  font-size: 0.85rem;
+  color: var(--bn-secondary);
+
+  summary {
+    cursor: pointer;
+    padding: 0.35rem 0;
+  }
+
+  .bn-more {
+    color: var(--bn-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .bn-note {
+    margin-top: 0.5rem;
+  }
+}

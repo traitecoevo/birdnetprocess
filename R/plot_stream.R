@@ -49,15 +49,9 @@
 plot_species_stream <- function(df, confidence = 0,
                                 bird.names = unique(df$`Common Name`),
                                 bw = 0.75) {
-  # pattern for date only
-  pattern <- "(\\d{4}-\\d{2}-\\d{2})"
-
-  # new column for date only, format to revert to character
-  # Base R equivalent of str_extract
-  matches <- regmatches(df$start_time, regexpr(pattern, df$start_time))
-  # Handle potential no-matches (though inputs should have valid times)
-  # regexpr returns -1 if no match.
-  df$date <- as.Date(matches)
+  # When the call happened, not when its source recording started — see
+  # detection_time().
+  df$date <- as.Date(detection_time(df))
 
   df1 <- df %>%
     filter(Confidence > confidence, `Common Name` %in% bird.names) %>%

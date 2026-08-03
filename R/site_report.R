@@ -76,7 +76,12 @@ site_report <- function(data,
   # 1. Deployment time window (optional): drop detections outside the period the
   # recorder was actually deployed at this site (e.g. recordings made before
   # the unit was moved into place).
+  n_before <- nrow(data)
   data <- trim_to_window(data, start_after = start_after, end_before = end_before)
+  if (nrow(data) < n_before) {
+    message("site_report: dropped ", n_before - nrow(data),
+            " detections outside the deployment window.")
+  }
 
   # 2. Range filter (optional)
   if (!is.null(abundance_raster)) {
@@ -133,7 +138,8 @@ site_report <- function(data,
       )
     }
     message(
-      "site_report: wrote ", length(plots), " plots",
+      "site_report", if (!is.null(site_name)) paste0(" [", site_name, "]") else "",
+      ": wrote ", length(plots), " plots",
       if (!is.null(report)) " + filter report" else "",
       " to ", output_dir
     )
@@ -144,40 +150,8 @@ site_report <- function(data,
     summary = summary,
     plots = plots,
     data_filtered = data_filtered,
-    output_dir = output_dir
+    output_dir = output_dir,
+    site_name = site_name
   ))
 }
 
-#' Trim detections to a deployment time window
-#'
-#' Internal helper. Drops rows whose `recording_window_time` falls outside the
-#' `[start_after, end_before]` bounds. `NULL` bounds are ignored. Character /
-#' Date bounds are parsed as UTC to match the times from
-#' \code{\link{read_birdnet_file}}.
-#'
-#' @noRd
-trim_to_window <- function(data, start_after = NULL, end_before = NULL) {
-  if (is.null(start_after) && is.null(end_before)) {
-    return(data)
-  }
-  if (!"recording_window_time" %in% names(data)) {
-    warning("No 'recording_window_time' column; skipping time-window trim.")
-    return(data)
-  }
-  as_utc <- function(x) {
-    if (is.character(x) || inherits(x, "Date")) {
-      lubridate::as_datetime(x, tz = "UTC")
-    } else {
-      x
-    }
-  }
-  t <- data$recording_window_time
-  keep <- !is.na(t)
-  if (!is.null(start_after)) keep <- keep & t >= as_utc(start_after)
-  if (!is.null(end_before)) keep <- keep & t <= as_utc(end_before)
-  n_drop <- sum(!keep)
-  if (n_drop > 0) {
-    message("site_report: dropped ", n_drop, " detections outside the deployment window.")
-  }
-  data[keep, , drop = FALSE]
-}

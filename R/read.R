@@ -158,6 +158,10 @@ read_birdnet_file <- function(file_path, tz = "UTC") {
     df <- readr::read_delim(file_path, delim = "\t", show_col_types = FALSE)
   }
 
+  # Perch heads write their own schema; rename onto the BirdNET/Raven names so
+  # everything downstream is unchanged.
+  df <- normalise_perch_predictions(df)
+
   # Standardize "Begin Time (s)" column
   # Raven uses "Begin Time (s)", BirdNET CSV often uses "Start (s)"
   if ("Begin Time (s)" %in% names(df)) {
@@ -353,4 +357,72 @@ read_birdnet_sites <- function(folder_paths,
   # Replace purrr::map_dfr with lapply + dplyr::bind_rows
   data_list <- lapply(folder_paths, read_one_site)
   dplyr::bind_rows(data_list)
+}
+
+#' Rename a perch-head predictions CSV onto the BirdNET/Raven column names
+#'
+#' Internal. `perch-head/scripts/predict.py` scores audio with a Perch-backbone
+#' head and writes `file, start_s, end_s, scientific, common, score` — the same
+#' information as a BirdNET table under different names. Renaming here means
+#' every reader, plot and report downstream is arm-agnostic and never has to ask
+#' which backbone produced a detection.
+#'
+#' One CSV covers a whole folder of recordings, with the source wav named per
+#' row in `file` and `start_s` measured within that wav. That is exactly the
+#' shape of a combined Raven export, so `file` is mapped to `Begin Path` and
+#' `start_s` is copied to `File Offset (s)`, letting the existing per-row
+#' datetime derivation handle it unchanged.
+#'
+#' A non-perch data frame is returned untouched.
+#'
+#' @noRd
+normalise_perch_predictions <- function(df) {
+  perch_cols <- c("file", "start_s", "score")
+  if (!all(perch_cols %in% names(df))) {
+    return(df)
+  }
+
+  df <- dplyr::rename(df,
+    `Begin Path` = "file",
+    `Start (s)` = "start_s",
+    Confidence = "score"
+  )
+  if ("end_s" %in% names(df)) df <- dplyr::rename(df, `End (s)` = "end_s")
+  if ("common" %in% names(df)) df <- dplyr::rename(df, `Common Name` = "common")
+  if ("scientific" %in% names(df)) {
+    df <- dplyr::rename(df, `Scientific name` = "scientific")
+  }
+
+  # start_s is already the offset within the row's own wav, which is what the
+  # combined-export path expects here.
+  df[["File Offset (s)"]] <- df[["Start (s)"]]
+  df
+}
+
+#' Preferred timestamp for a detection
+#'
+#' Internal helper. Detections carry two times: `start_time` (when the source
+#' recording began) and `recording_window_time` (when the detected call
+#' actually happened, i.e. `start_time` plus the offset into the file).
+#'
+#' `recording_window_time` is the one that means anything for activity over the
+#' day. It also matters for combined Raven exports, where a single selection
+#' table spans many recordings and `start_time` is derived per row from
+#' `Begin Path`; plots keyed on `start_time` alone quantise every detection to
+#' the top of its source file.
+#'
+#' Falls back to `start_time` where the window time is missing.
+#'
+#' @noRd
+detection_time <- function(df) {
+  has_window <- "recording_window_time" %in% names(df)
+  has_start <- "start_time" %in% names(df)
+  if (!has_window && !has_start) {
+    stop("Detections need a 'recording_window_time' or 'start_time' column.",
+         call. = FALSE)
+  }
+  if (!has_window) return(df$start_time)
+  if (!has_start) return(df$recording_window_time)
+  t <- df$recording_window_time
+  ifelse(is.na(t), df$start_time, t) |> lubridate::as_datetime()
 }

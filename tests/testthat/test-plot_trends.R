@@ -13,8 +13,8 @@ test_that("plot_top_species generates a ggplot object", {
     expect_s3_class(p, "ggplot")
 
     plot_df <- p$data
-    expect_false("Crow" %in% plot_df$`Common name`)
-    expect_true("Robin" %in% plot_df$`Common name`)
+    expect_false("Crow" %in% plot_df$`Common Name`)
+    expect_true("Robin" %in% plot_df$`Common Name`)
 })
 
 test_that("plot_species filters correctly", {
@@ -27,9 +27,9 @@ test_that("plot_species filters correctly", {
     p <- plot_species(mock_data, species_list = c("Robin"), confidence_threshold = 0.5)
     plot_df <- p$data
 
-    expect_true("Robin" %in% plot_df$`Common name`)
-    expect_false("Sparrow" %in% plot_df$`Common name`)
-    expect_false("Eagle" %in% plot_df$`Common name`)
+    expect_true("Robin" %in% plot_df$`Common Name`)
+    expect_false("Sparrow" %in% plot_df$`Common Name`)
+    expect_false("Eagle" %in% plot_df$`Common Name`)
 })
 
 test_that("plot_top_species fills zeros correctly", {
@@ -107,9 +107,9 @@ test_that("plot_species filters correctly", {
     p <- plot_species(mock_data, species_list = c("Robin"), confidence_threshold = 0.5)
     plot_df <- p$data
 
-    expect_true("Robin" %in% plot_df$`Common name`)
-    expect_false("Sparrow" %in% plot_df$`Common name`)
-    expect_false("Eagle" %in% plot_df$`Common name`)
+    expect_true("Robin" %in% plot_df$`Common Name`)
+    expect_false("Sparrow" %in% plot_df$`Common Name`)
+    expect_false("Eagle" %in% plot_df$`Common Name`)
 })
 
 test_that("plot_top_species fills zeros correctly", {
@@ -202,4 +202,28 @@ test_that("plot_top_species handles log_scaling correctly", {
     y_scale <- p_log$scales$get_scales("y")
     expect_false(is.null(y_scale))
     expect_match(y_scale$trans$name, "pseudo_log")
+})
+
+test_that("either casing of the common-name column is accepted", {
+    # Raven writes "Common Name", some CSV exports "Common name". Both must
+    # work, and both must come out as "Common Name" so that the rest of the
+    # package recognises the result.
+    base <- data.frame(
+        Confidence = c(0.9, 0.9),
+        recording_window_time = as.POSIXct(c("2024-01-01 06:00:00",
+                                             "2024-01-01 07:00:00"), tz = "UTC"),
+        check.names = FALSE
+    )
+
+    lower <- cbind(base, `Common name` = c("Robin", "Robin"))
+    upper <- cbind(base, `Common Name` = c("Robin", "Robin"))
+    names(lower)[3] <- "Common name"
+    names(upper)[3] <- "Common Name"
+
+    p_lower <- plot_top_species(lower, n_top_species = 1, confidence_threshold = 0.5)
+    p_upper <- plot_top_species(upper, n_top_species = 1, confidence_threshold = 0.5)
+
+    expect_true("Common Name" %in% names(p_lower$data))
+    expect_true("Common Name" %in% names(p_upper$data))
+    expect_false("Common name" %in% names(p_lower$data))
 })

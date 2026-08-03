@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}} — listen and confirm</title>
+<style>
+:root {
+  --surface: #fcfcfb;
+  --raised: #ffffff;
+  --primary: #0b0b0b;
+  --secondary: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --accent: #2a78d6;
+  --flag: #c2410c;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #16161a;
+    --raised: #1e1e23;
+    --primary: #f2f1ee;
+    --secondary: #b8b6b0;
+    --muted: #8a8880;
+    --grid: #34343a;
+    --accent: #74a9ec;
+    --flag: #f0916a;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--primary);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+.wrap { max-width: 720px; margin: 0 auto; padding: 0 1rem 5rem; }
+
+/* --- Intro ---------------------------------------------------------------- */
+.intro { padding: 2.5rem 0 1.5rem; }
+.intro h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
+.intro .place { color: var(--secondary); margin: 0 0 1.25rem; }
+.intro p { color: var(--secondary); font-size: 0.92rem; max-width: 60ch; }
+.intro strong { color: var(--primary); }
+
+/* --- Sticky bar ----------------------------------------------------------- */
+.bar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+  padding: 0.6rem 0; margin-bottom: 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--grid);
+}
+.progress { font-size: 0.85rem; color: var(--secondary); margin-right: auto; }
+.progress b { color: var(--primary); }
+button {
+  font: inherit; font-size: 0.82rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--grid); border-radius: 999px;
+  background: var(--raised); color: var(--secondary);
+  cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.primary { border-color: var(--accent); color: var(--accent); }
+
+/* --- Species card --------------------------------------------------------- */
+.card {
+  background: var(--raised);
+  border: 1px solid var(--grid);
+  border-radius: 10px;
+  padding: 1rem 1.15rem 0.85rem;
+  margin-bottom: 1rem;
+}
+.card.done { border-color: var(--accent); }
+.card.hidden { display: none; }
+.card h2 { font-size: 1.05rem; margin: 0 0 0.15rem; }
+.card .count { margin: 0 0 0.9rem; font-size: 0.82rem; color: var(--muted); }
+.flag {
+  font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--flag);
+  border: 1px solid currentColor; border-radius: 4px;
+  padding: 0.05rem 0.35rem; vertical-align: 2px; margin-left: 0.35rem;
+}
+
+.clips { list-style: none; margin: 0 0 0.9rem; padding: 0; }
+.clip { display: flex; align-items: center; gap: 0.75rem; padding: 0.2rem 0; }
+.clip .meta { flex: 0 0 8.5rem; font-size: 0.78rem; color: var(--muted); }
+.clip .conf {
+  font-variant-numeric: tabular-nums; color: var(--secondary); font-weight: 600;
+}
+.clip .site { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clip audio { flex: 1 1 auto; height: 32px; max-width: 100%; }
+
+.verdict {
+  display: flex; flex-wrap: wrap; gap: 0.9rem; align-items: center;
+  border-top: 1px solid var(--grid); padding-top: 0.75rem;
+}
+.verdict label { font-size: 0.85rem; color: var(--secondary); cursor: pointer; }
+.verdict input[type="radio"] { accent-color: var(--accent); margin-right: 0.25rem; }
+.note {
+  flex: 1 1 14rem; min-width: 0;
+  font: inherit; font-size: 0.82rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--grid); border-radius: 6px;
+  background: var(--surface); color: var(--primary);
+}
+.empty { color: var(--muted); font-size: 0.9rem; padding: 2rem 0; display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="intro">
+  <h1>{{TITLE}} — listen and confirm</h1>
+  <p class="place">{{PLACE}}</p>
+  <p>
+  A recogniser was run over the recordings from this site. Below are its
+  <strong>{{N_CLIPS}} most confident clips</strong> across
+  <strong>{{N_SPECIES}} species</strong>. {{SCOPE_NOTE}} {{FLAG_NOTE}}
+  </p>
+  <p>
+  These are each species' <em>best</em> clips, so they are the friendliest test
+  the recogniser can be given: if the best five are wrong the species is wrong,
+  but five right ones do not vouch for the quieter detections behind them.
+  Mark <strong>Mixed</strong> where some clips are the bird and some are not —
+  that is the most informative answer, and the one a summary would lose.
+  </p>
+  <p>
+  Nothing is sent anywhere. Answers are kept in this browser as you go, so you
+  can stop and come back; press <strong>Download responses</strong> when you are
+  done and send the file back.
+  </p>
+</div>
+
+<div class="bar">
+  <span class="progress"><b id="n-done">0</b> of <b id="n-total">0</b> species reviewed</span>
+  <button id="f-all" aria-pressed="true">All</button>
+  <button id="f-flagged" aria-pressed="false">Not validated</button>
+  <button id="f-todo" aria-pressed="false">Unanswered</button>
+  <button id="download" class="primary">Download responses</button>
+</div>
+
+{{CARDS}}
+
+<p class="empty" id="empty">Nothing matches that filter.</p>
+
+</div>
+<script>
+(function () {
+  var KEY = "birdnet-verify-{{SLUG}}";
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".card"));
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
+
+  document.getElementById("n-total").textContent = cards.length;
+
+  function state(card) {
+    var picked = card.querySelector("input[type=radio]:checked");
+    return {
+      species: card.dataset.species,
+      flagged: card.dataset.flagged === "true",
+      verdict: picked ? picked.value : "",
+      note: card.querySelector(".note").value
+    };
+  }
+
+  function save() {
+    var out = {};
+    cards.forEach(function (card) {
+      var s = state(card);
+      if (s.verdict || s.note) out[s.species] = { verdict: s.verdict, note: s.note };
+      card.classList.toggle("done", !!s.verdict);
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(out)); } catch (e) {}
+    document.getElementById("n-done").textContent = Object.keys(out).filter(
+      function (k) { return out[k].verdict; }
+    ).length;
+  }
+
+  // Restore anything answered in an earlier sitting.
+  cards.forEach(function (card) {
+    var prior = saved[card.dataset.species];
+    if (!prior) return;
+    if (prior.verdict) {
+      var input = card.querySelector('input[value="' + prior.verdict + '"]');
+      if (input) input.checked = true;
+    }
+    if (prior.note) card.querySelector(".note").value = prior.note;
+  });
+  save();
+
+  document.addEventListener("change", save);
+  document.addEventListener("input", function (e) {
+    if (e.target.classList.contains("note")) save();
+  });
+
+  // Only one clip plays at a time; overlapping audio makes them unjudgeable.
+  document.addEventListener("play", function (e) {
+    document.querySelectorAll("audio").forEach(function (a) {
+      if (a !== e.target) a.pause();
+    });
+  }, true);
+
+  // --- Filters --------------------------------------------------------------
+  var filters = {
+    "f-all": function () { return true; },
+    "f-flagged": function (card) { return card.dataset.flagged === "true"; },
+    "f-todo": function (card) { return !card.querySelector("input:checked"); }
+  };
+  Object.keys(filters).forEach(function (id) {
+    document.getElementById(id).addEventListener("click", function () {
+      Object.keys(filters).forEach(function (other) {
+        document.getElementById(other).setAttribute("aria-pressed", String(other === id));
+      });
+      var shown = 0;
+      cards.forEach(function (card) {
+        var keep = filters[id](card);
+        card.classList.toggle("hidden", !keep);
+        if (keep) shown++;
+      });
+      document.getElementById("empty").style.display = shown ? "none" : "block";
+      window.scrollTo(0, 0);
+    });
+  });
+
+  // --- Export ---------------------------------------------------------------
+  function csvCell(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }
+
+  document.getElementById("download").addEventListener("click", function () {
+    var rows = [["species", "not_validated", "verdict", "notes", "reviewed_at"]];
+    var stamp = new Date().toISOString();
+    cards.forEach(function (card) {
+      var s = state(card);
+      rows.push([s.species, s.flagged ? "yes" : "no", s.verdict, s.note,
+                 s.verdict || s.note ? stamp : ""]);
+    });
+    var csv = rows.map(function (r) { return r.map(csvCell).join(","); }).join("\n");
+    var url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "{{SLUG}}_verification.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+})();
+</script>
+</body>
+</html>
