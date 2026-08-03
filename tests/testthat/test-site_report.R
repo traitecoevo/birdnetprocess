@@ -13,7 +13,7 @@ test_that("site_report returns objects and writes files when given a raster", {
     tz = "UTC"
   )
 
-  expect_named(res, c("report", "summary", "plots", "data_filtered", "output_dir"))
+  expect_named(res, c("report", "summary", "plots", "data_filtered", "output_dir", "site_name"))
   expect_s3_class(res$report, "data.frame")
   expect_false("Noisy Miner" %in% res$data_filtered$`Common Name`)
 

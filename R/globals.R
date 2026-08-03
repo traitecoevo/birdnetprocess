@@ -32,5 +32,16 @@ utils::globalVariables(c(
     "species",
     "matched_layer",
     "n_detections",
-    "max_confidence"
+    "max_confidence",
+    "tod",
+    "tod_sec",
+    "rel",
+    "day_frac",
+    "circ",
+    "detections",
+    "threshold",
+    "threshold_source",
+    "x",
+    "y",
+    "lab"
 ))

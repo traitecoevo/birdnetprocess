@@ -1,0 +1,103 @@
+# Deployment configuration for birdnetprocess.
+#
+# One file per field deployment. It describes the DATA (where, which sites,
+# which days) and the DETECTOR (which model produced the detections), and is
+# read by both the R reporting side and the Python detector-running side, so
+# the site list and target dates can't drift apart between them.
+#
+# Paths may be absolute, start with ~, or be relative to THIS FILE.
+#
+#   cfg <- birdnetprocess::read_deployment("deployment.yml")
+#   d   <- birdnetprocess::read_deployment_detections(cfg)
+#   birdnetprocess::birdnet_report(cfg)
+
+name: My deployment
+
+location:
+  latitude: -33.8688          # decimal degrees, WGS84. Negative = south.
+  longitude: 151.2093         # negative = west. Used for sunrise/sunset.
+  tz: Australia/Sydney        # must be one of OlsonNames()
+  place: Somewhere, NSW       # free text, shown in the report header
+
+detector:
+  name: BirdNET-Analyzer      # shown in the report; name the custom model here
+  version: 2.4                # optional, free text
+  # A custom classifier. Omit both to use the stock BirdNET model.
+  model: ~/path/to/recognizers/my_model.tflite
+  labels: ~/path/to/recognizers/my_model_Labels.txt
+  # Python interpreter that can import birdnet_analyzer. Only needed if you
+  # run the detector from this config; the report side ignores it.
+  venv: ~/Documents/ecoacoustics/BirdNET-Analyzer/.venv/bin/python
+  params:
+    fmin: 0
+    fmax: 15000
+    overlap: 0.0
+    min_conf: 0.1             # keep LOW here; filter properly at analysis$confidence
+    merge_consecutive: 1
+    threads: 6
+
+# One entry per recorder location.
+#   recordings: folder of .wav files      (input to the detector)
+#   detections: folder of BirdNET tables  (output of the detector, input to R)
+#   date:       a single calendar day to analyse
+#               — or use start/end for a multi-day window instead
+sites:
+  - id: Site A
+    recordings: ~/path/to/recordings/Site A
+    detections: ~/path/to/detections/Site A
+    date: 2026-02-03
+  - id: Site B
+    recordings: ~/path/to/recordings/Site B
+    detections: ~/path/to/detections/Site B
+    start: 2026-02-01
+    end: 2026-02-07
+
+analysis:
+  confidence: 0.5             # reporting threshold, 0-1
+  min_detections: 5           # drop species with fewer detections than this
+  n_top_species: 10
+
+  # Cut the N highest-confidence clips of each species into report/clips/,
+  # with a listening sheet, so someone can check by ear what the detector
+  # heard. Omit or set to 0 to skip.
+  export_clips: 5
+  # ...for this many species only, most-detected first. Omit for all of them —
+  # but a deployment routinely turns up 70+, which is more listening than
+  # anyone finishes.
+  clip_top_species: 20
+
+  # Common names to drop before anything is computed: noise classes, and
+  # species local knowledge says do not occur here. The range filter below
+  # cannot catch the latter — a bird that occurs regionally but not at this
+  # site has non-zero modelled abundance and survives it.
+  #
+  # Either a plain list:
+  #   exclude: [Rain, Stream]
+  # or a mapping, whose reasons are carried into the report. Prefer the mapping
+  # for species: removing one is a judgement, and a reader should be able to
+  # see it and disagree.
+  exclude:
+    Rain: ""
+    Stream: ""
+    Australasian Grass-Owl: >-
+      No records within 200 km; the detections were all dawn wind noise.
+
+  # Optional. Split species into taxon groups for colouring and faceting,
+  # matched against the genus in the detector's labels file. Exactly one group
+  # may be `default: true` — everything unmatched lands there.
+  groups:
+    Insects:
+      genera: [Cyclochila, Psaltoda, Yoyetta, Teleogryllus, Gryllotalpa]
+    Frogs:
+      genera: [Litoria, Crinia, Limnodynastes, Uperoleia]
+    Other:
+      genera: [Bos, Canis, Homo, Ovis]
+    Birds:
+      default: true
+
+  # Optional. Drop species whose modelled abundance at this location is zero,
+  # i.e. geographic false positives. Needs the terra package.
+  # range_filter:
+  #   raster: ~/path/to/nsw_abundance_stack_3km.tif
+  #   min_abundance: 0
+  #   keep_species: [Australian Pelican]   # always keep, e.g. nomadic species

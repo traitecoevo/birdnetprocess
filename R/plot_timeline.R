@@ -23,20 +23,15 @@ plot_timeline <- function(df, confidence = 0,
   df <- df |>
     dplyr::filter(`Common Name` != "nocall" & `Common Name` %in% bird_names)
 
-  # pattern for extracting time
-  pattern <- "(\\d{4}-\\d{2}-\\d{2})"
-
-  # single out date only
-  matches <- regmatches(
-    format(df$start_time),
-    regexpr(pattern, format(df$start_time))
-  )
-  df$date <- as.Date(matches)
+  # When the call happened, not when its source recording started — see
+  # detection_time().
+  t <- detection_time(df)
+  df$date <- as.Date(t)
 
   date_range <- paste(
-    format(lubridate::date(min(df$start_time)), "%d %B %Y"),
+    format(min(df$date), "%d %B %Y"),
     "-",
-    format(lubridate::date(max(df$start_time)), "%d %B %Y")
+    format(max(df$date), "%d %B %Y")
   )
 
   # remove no call and filter by confidence, group by date

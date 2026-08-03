@@ -17,3 +17,8 @@
 ^wilddeserts$
 ^wilddeserts_plots$
 ^\.Rhistory$
+^CLAUDE\.md$
+^make_play_plots\.R$
+^phenology_explore$
+^wd3_plots$
+^wilddeserts2-ces1$

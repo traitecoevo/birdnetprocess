@@ -21,7 +21,8 @@ Imports:
     scales,
     rlang,
     tidyr,
-    hms
+    hms,
+    yaml
 Remotes:
     davidsjoberg/ggstream
 Suggests:
@@ -30,7 +31,10 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0),
     ggstream,
+    gt,
+    quarto,
+    ragg,
     suncalc,
     terra,
     withr
-Config/roxygen2/version: 7.3.3.9000
+Config/roxygen2/version: 8.0.0

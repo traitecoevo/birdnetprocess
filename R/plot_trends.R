@@ -32,9 +32,9 @@ plot_top_species <- function(data,
 
     # Identify Top Species
     top_species <- data_filtered |>
-        dplyr::count(`Common name`, sort = TRUE) |>
+        dplyr::count(`Common Name`, sort = TRUE) |>
         dplyr::slice_head(n = n_top_species) |>
-        dplyr::pull(`Common name`)
+        dplyr::pull(`Common Name`)
 
     if (length(top_species) == 0) {
         return(NULL)
@@ -45,7 +45,7 @@ plot_top_species <- function(data,
 
     # Filter to Top Species
     data_final <- data_filtered |>
-        dplyr::filter(`Common name` %in% top_species)
+        dplyr::filter(`Common Name` %in% top_species)
 
     # Plot
     plot_aggregated_data(
@@ -99,7 +99,7 @@ plot_species <- function(data,
 
     # Filter by List
     data_final <- data_filtered |>
-        dplyr::filter(`Common name` %in% species_list)
+        dplyr::filter(`Common Name` %in% species_list)
 
     # Plot
     # If no data found for those species, we still want to try plotting (will be empty except zeros)
@@ -127,10 +127,15 @@ plot_species <- function(data,
 # --- Internal Helper Functions ---
 
 validate_birdnet_data <- function(data) {
-    if ("Common Name" %in% names(data) && !"Common name" %in% names(data)) {
-        data <- data |> dplyr::rename(`Common name` = `Common Name`)
+    # Raven writes "Common Name"; some CSV exports write "Common name". Accept
+    # either and standardise on the Raven casing, which the rest of the package
+    # uses — this file used to standardise on the other one, so a data frame
+    # that had been through here came out with a column name no other plot
+    # function recognised.
+    if (!"Common Name" %in% names(data) && "Common name" %in% names(data)) {
+        data <- data |> dplyr::rename(`Common Name` = `Common name`)
     }
-    if (!"Common name" %in% names(data)) stop("Missing 'Common name' column.")
+    if (!"Common Name" %in% names(data)) stop("Missing 'Common Name' column.")
     if (!"recording_window_time" %in% names(data)) stop("Missing 'recording_window_time' column.")
     data
 }
@@ -145,7 +150,7 @@ plot_aggregated_data <- function(data,
                                  tz = "UTC",
                                  log_scaling = FALSE) {
     # Prepare Plot Data (Aggregation)
-    group_vars <- c("time_bin", "Common name")
+    group_vars <- c("time_bin", "Common Name")
     if (!is.null(facet_by)) {
         if (!facet_by %in% names(data)) stop(paste("Facet column", facet_by, "not found."))
         group_vars <- c(group_vars, facet_by)
@@ -160,7 +165,7 @@ plot_aggregated_data <- function(data,
         # Handle empty data (species not found but time limits exist)
         plot_data <- dplyr::tibble(
             time_bin = lubridate::floor_date(time_limits[1], unit = unit), # Dummy to set type
-            `Common name` = character(),
+            `Common Name` = character(),
             n = integer()
         ) |> dplyr::slice(0) # Empty row with correct types
         if (!is.null(facet_by)) {
@@ -179,7 +184,7 @@ plot_aggregated_data <- function(data,
 
     if (is.null(facet_by)) {
         plot_data <- plot_data |>
-            tidyr::complete(time_bin = full_time_seq, `Common name` = species_list, fill = list(n = 0))
+            tidyr::complete(time_bin = full_time_seq, `Common Name` = species_list, fill = list(n = 0))
     } else {
         # If faceting, we need to know WHICH facets exist.
         # If data is empty for filtered species, we don't know the facets (e.g. sites) unless passed.
@@ -190,11 +195,11 @@ plot_aggregated_data <- function(data,
         # Assuming plot_data matches conventions
         if (nrow(plot_data) > 0) {
             plot_data <- plot_data |>
-                tidyr::complete(time_bin = full_time_seq, `Common name` = species_list, !!rlang::sym(facet_by), fill = list(n = 0))
+                tidyr::complete(time_bin = full_time_seq, `Common Name` = species_list, !!rlang::sym(facet_by), fill = list(n = 0))
         } else {
             # Data empty. Create grid for time/species, but we miss Facet Column values.
             # User sees empty plot. Acceptable fallback.
-            plot_data <- tidyr::expand_grid(time_bin = full_time_seq, `Common name` = species_list) |>
+            plot_data <- tidyr::expand_grid(time_bin = full_time_seq, `Common Name` = species_list) |>
                 dplyr::mutate(n = 0)
             # Warning: Facet column missing. ggplot facet will fail if variables missing.
             # Ideally we'd need 'site_list' too.
@@ -236,8 +241,8 @@ plot_aggregated_data <- function(data,
     # Main Layers
     if (nrow(plot_data) > 0) {
         p <- p +
-            ggplot2::geom_line(ggplot2::aes(x = time_bin, y = n, color = `Common name`), linewidth = 1) +
-            ggplot2::geom_point(ggplot2::aes(x = time_bin, y = n, color = `Common name`), size = 1.5, alpha = 0.7)
+            ggplot2::geom_line(ggplot2::aes(x = time_bin, y = n, color = `Common Name`), linewidth = 1) +
+            ggplot2::geom_point(ggplot2::aes(x = time_bin, y = n, color = `Common Name`), size = 1.5, alpha = 0.7)
     }
 
     p <- p +

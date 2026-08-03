@@ -36,12 +36,9 @@ plot_confidence <- function(df, confidence = 0, bw = 0.75) {
       Confidence > 0.9 & Confidence <= 1 ~ "0.9 - 1.0"
     ))
 
-  # pattern for date extraction
-  pattern <- "(\\d{4}-\\d{2}-\\d{2})"
-
-  # extract date
-  matches <- regmatches(format(df$start_time), regexpr(pattern, format(df$start_time)))
-  df$date <- as.Date(matches)
+  # When the call happened, not when its source recording started — see
+  # detection_time().
+  df$date <- as.Date(detection_time(df))
 
   # filter out no call, filter by confidence (default is 0)
   df1 <- df |>

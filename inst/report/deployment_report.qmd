@@ -1,0 +1,403 @@
+---
+title: "Deployment report"
+format:
+  html:
+    theme: [default, report.scss]
+    embed-resources: true
+    toc: true
+    toc-depth: 2
+    toc-location: left
+    fig-align: center
+    page-layout: article
+params:
+  bundle: ""
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| include: false
+library(birdnetprocess)
+library(ggplot2)
+
+b <- readRDS(params$bundle)
+cfg <- b$cfg
+st <- b$stats
+
+knitr::opts_chunk$set(
+  dev = if (requireNamespace("ragg", quietly = TRUE)) "ragg_png" else "png",
+  dpi = 150,
+  fig.path = "figures/",
+  fig.retina = 2,
+  out.width = "100%"
+)
+
+# Compact numbers read faster in a tile than exact ones; the exact count is in
+# the tables below for anyone who needs it.
+compact <- function(n) {
+  if (is.na(n)) return("—")
+  if (n >= 1e6) return(paste0(round(n / 1e6, 1), "M"))
+  if (n >= 1e4) return(paste0(round(n / 1e3), "K"))
+  format(n, big.mark = ",")
+}
+
+tile <- function(label, value, note = NULL) {
+  sprintf(
+    '<div class="bn-tile"><div class="bn-tile-label">%s</div>
+     <div class="bn-tile-value">%s</div>%s</div>',
+    label, value,
+    if (is.null(note)) "" else sprintf('<div class="bn-tile-note">%s</div>', note)
+  )
+}
+
+fmt_date <- function(x) if (is.na(x)) "—" else format(x, "%d %b %Y")
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
+# Emit HTML as an explicit raw block. Without the fence, pandoc parses the
+# indented continuation lines as markdown and drops the closing tags.
+raw_html <- function(...) cat("\n```{=html}\n", paste0(...), "\n```\n", sep = "")
+
+# Figure height scales with the number of species rows, or a tall plot gets
+# squashed into unreadable slivers. Computed here so the chunks below can use
+# it as a chunk option.
+n_species_shown <- function(p) {
+  if (is.null(p) || is.null(p$data)) return(10)
+  length(unique(p$data[["Common Name"]]))
+}
+activity_height <- max(4, min(22, 2 + 0.24 * n_species_shown(b$plots$activity)))
+counts_height <- max(4, min(12, 1.5 + 0.28 * n_species_shown(b$plots$counts)))
+
+# Wide tables scroll inside their own box so the page never scrolls sideways.
+html_table_str <- function(df, align_right = character(0)) {
+  body <- if (requireNamespace("gt", quietly = TRUE)) {
+    g <- gt::gt(df)
+    if (length(align_right) > 0) {
+      g <- gt::cols_align(g, align = "right", columns = align_right)
+    }
+    g <- gt::tab_options(
+      g,
+      table.font.size = "0.85rem",
+      table.background.color = "transparent",
+      table.border.top.style = "none",
+      table_body.hlines.color = "#e1e0d9",
+      column_labels.border.bottom.color = "#c3c2b7"
+    )
+    as.character(gt::as_raw_html(g))
+  } else {
+    paste(knitr::kable(df, format = "html", row.names = FALSE,
+                       format.args = list(big.mark = ",")), collapse = "\n")
+  }
+  paste0('<div class="bn-scroll">', body, '</div>')
+}
+
+html_table <- function(df, align_right = character(0)) {
+  raw_html(html_table_str(df, align_right))
+}
+
+# Housekeeping the report has to state but nobody reads top-to-bottom: what was
+# filtered out and why. Folded shut so it costs one line of the page, and is
+# still there for anyone who asks where a species went.
+details <- function(summary, ...) {
+  sprintf('<details class="bn-details"><summary>%s</summary>%s</details>',
+          summary, paste0(...))
+}
+```
+
+```{r header}
+#| output: asis
+span <- if (identical(fmt_date(st$first), fmt_date(st$last))) {
+  fmt_date(st$first)
+} else {
+  paste(fmt_date(st$first), "–", fmt_date(st$last))
+}
+
+raw_html(sprintf(
+  '<div class="bn-header">
+<h1 class="bn-title">%s</h1>
+<p class="bn-subtitle">%s · %s</p>
+<dl class="bn-meta">
+<div><dt>Detector</dt><dd>%s</dd></div>
+<div><dt>Threshold</dt><dd>confidence ≥ %s</dd></div>
+<div><dt>Coordinates</dt><dd>%.4f, %.4f</dd></div>
+<div><dt>Time zone</dt><dd>%s</dd></div>
+<div><dt>Generated</dt><dd>%s</dd></div>
+</dl>
+</div>',
+  cfg$name,
+  cfg$location$place %||% "",
+  span,
+  paste0(cfg$detector$name,
+         if (!is.null(cfg$detector$version)) paste0(" v", cfg$detector$version) else ""),
+  st$confidence,
+  cfg$location$latitude, cfg$location$longitude,
+  cfg$location$tz,
+  format(b$generated, "%d %b %Y, %H:%M")
+))
+```
+
+```{r tiles}
+#| output: asis
+raw_html(
+  '<div class="bn-tiles">',
+  tile("Sites", st$n_sites),
+  tile("Species", compact(st$n_species), "distinct common names"),
+  tile("Detections", compact(st$n_detections),
+       sprintf("at confidence ≥ %s", st$confidence)),
+  tile("Recordings", compact(st$n_recordings), "source audio files"),
+  '</div>'
+)
+```
+
+## What was recorded
+
+```{r per-site}
+#| output: asis
+tbl <- b$per_site
+tbl$span <- ifelse(
+  format(tbl$first, "%Y-%m-%d") == format(tbl$last, "%Y-%m-%d"),
+  format(tbl$first, "%d %b %Y"),
+  paste(format(tbl$first, "%d %b"), "–", format(tbl$last, "%d %b %Y"))
+)
+out <- data.frame(
+  Site = tbl$Site,
+  Dates = tbl$span,
+  Recordings = format(tbl$recordings, big.mark = ","),
+  Detections = format(tbl$detections, big.mark = ","),
+  Species = tbl$species,
+  check.names = FALSE
+)
+
+html_table(out, align_right = c("Recordings", "Detections", "Species"))
+```
+
+::: {.bn-note}
+Counts are detections, not individual animals: one bird calling repeatedly
+produces many rows. Read them as calling activity, not abundance.
+:::
+
+```{r silent-sites}
+#| output: asis
+if (length(b$silent_sites) > 0) {
+  cat("::: {.bn-note .bn-warn}\n")
+  cat("**", length(b$silent_sites), " of ", st$n_sites + length(b$silent_sites),
+      " sites contributed nothing to this report.** They recorded, and the ",
+      "detector scored them, but no detection reached the reporting threshold, ",
+      "so they appear in no table or figure below:\n\n", sep = "")
+  cat(paste0("- ", b$silent_sites, collapse = "\n"))
+  cat("\n\nA whole site scoring far below the others usually means a hardware ",
+      "fault rather than an absence of birds — check the recordings' audio ",
+      "levels before concluding the site was quiet.\n", sep = "")
+  cat(":::\n\n")
+}
+```
+
+## Which species, and how much
+
+```{r counts}
+#| fig-width: 10
+#| fig-height: !expr counts_height
+#| fig-alt: "Bar chart of detection counts per species, most detected first."
+if (!is.null(b$plots$counts)) b$plots$counts
+```
+
+## When they called
+
+The diel plot folds every recorded day onto one 24-hour clock, so a species'
+row shows the time of day it calls rather than which day it happened to be
+heard. Each row is scaled to its own peak — rows show *timing*, not relative
+abundance between species. Grey bands are night.
+
+```{r activity}
+#| fig-width: 12
+#| fig-height: !expr activity_height
+#| fig-alt: "Heatmap of calling activity by time of day, one row per species."
+if (!is.null(b$plots$activity)) b$plots$activity
+```
+
+```{r trends}
+#| fig-width: 10
+#| fig-height: 6
+#| fig-alt: "Detections per hour over the deployment for the most-detected species."
+if (!is.null(b$plots$trends)) b$plots$trends
+```
+
+## How much to trust it
+
+```{r confidence}
+#| fig-width: 9
+#| fig-height: 7
+#| fig-alt: "Boxplots of detection confidence for the most-detected species."
+if (!is.null(b$plots$confidence)) b$plots$confidence
+```
+
+::: {.bn-note}
+A species whose confidence sits just above the threshold deserves a listen
+before it goes in a results table. Detector confidence is not a probability of
+correctness, and it is not comparable between species.
+:::
+
+```{r clips}
+#| output: asis
+if (b$n_clips > 0) {
+  scope <- if (b$clip_species < st$n_species) {
+    sprintf("the %d most-detected species", b$clip_species)
+  } else {
+    "every species"
+  }
+  cat(sprintf(
+"### Listen for yourself
+
+The %d highest-confidence clips of %s sit in `clips/` beside this report, with
+a listening sheet at [`clips/index.html`](clips/index.html): play each clip,
+mark whether it is the bird, and send back the CSV it exports.
+[`%s`](%s) is the same folder packed to email — the sheet needs the audio
+alongside it, so send the archive rather than the page.
+
+These are each species' best clips, which makes this the friendliest test the
+detector can be given. It settles which species are wrong; it cannot vouch for
+the quieter detections behind the ones you hear%s.
+
+", b$n_clips, scope, b$clips_zip, b$clips_zip,
+   if (b$clip_species < st$n_species) {
+     sprintf(", nor for the %d species with no clips here",
+             st$n_species - b$clip_species)
+   } else {
+     ""
+   }))
+}
+```
+
+```{r thresholds}
+#| output: asis
+if (isTRUE(st$per_species)) {
+  cat(sprintf(
+    "\n### Thresholds\n\n%d of the %d species reported here were thresholded at their own calibrated operating point; the rest use the deployment default of %s.\n\n",
+    st$n_calibrated, st$n_species, st$confidence
+  ))
+} else {
+  cat("\n### Thresholds\n\n")
+  # The config's own note leads when there is one; a generic sentence in front
+  # of it just says the same thing twice.
+  if (is.null(b$threshold_note)) {
+    cat(sprintf("Every species here is cut at the same confidence, %s.\n\n",
+                st$confidence))
+  }
+}
+
+# The note explains where the number came from, which matters just as much
+# when there is only one of them.
+if (!is.null(b$threshold_note)) {
+  cat("::: {.bn-note}\n", b$threshold_note, "\n:::\n\n", sep = "")
+}
+
+if (length(b$flagged) > 0) {
+  cat("::: {.bn-note .bn-warn}\n")
+  cat("**Not validated.** Evaluation on labelled audio did not establish a ",
+      "reliable operating point for these species, so their detections are ",
+      "shown for review rather than as findings, and should be listened to ",
+      "before being counted:\n\n", sep = "")
+  cat(paste0("- ", b$flagged, collapse = "\n"))
+  cat("\n\nThat is a statement about the labelled soundscape the detector was ",
+      "scored on, not a measurement made here — a species can fail there ",
+      "simply by being too rare in it to assess.\n", sep = "")
+  cat(":::\n\n")
+}
+```
+
+## Full species list
+
+```{r species-table}
+#| output: asis
+out <- b$species_table
+if ("basis" %in% names(out)) {
+  out$basis <- c(calibrated = "calibrated", unvalidated = "NOT VALIDATED",
+                 default = "default")[out$basis]
+}
+names(out) <- c("Species", "Detections", "Sites", "Median confidence",
+                "Max confidence", "Threshold", "Basis")[seq_along(out)]
+# Under a single threshold the last two columns are dropped upstream, so align
+# only what is actually here.
+html_table(out, align_right = intersect(
+  c("Detections", "Sites", "Median confidence", "Max confidence", "Threshold"),
+  names(out)
+))
+```
+
+## What was filtered out
+
+```{r filtering}
+#| output: asis
+ex <- b$excluded
+if (!is.null(ex) && nrow(ex) > 0) {
+  lines <- sprintf(
+    "- **%s** — %s detections removed%s",
+    ex$species, format(ex$detections, big.mark = ","),
+    ifelse(nzchar(ex$reason), paste0(". ", ex$reason), "")
+  )
+  cat("Species named in the config as not occurring here, removed before any ",
+      "figure or table below was computed:\n\n", sep = "")
+  cat(paste(lines, collapse = "\n"), "\n\n", sep = "")
+}
+
+rr <- b$range_report
+if (!is.null(rr)) {
+  removed <- rr[grepl("^removed", rr$status), , drop = FALSE]
+  unassessed <- sum(grepl("^unassessed", rr$status))
+  head_line <- sprintf(
+    "Range filter: %d of %d species dropped as geographically implausible here; %d had no range map and were kept.",
+    nrow(removed), nrow(rr), unassessed
+  )
+  if (nrow(removed) > 0) {
+    tbl <- removed[order(-removed$n_detections),
+                   c("species", "n_detections", "max_confidence", "status")]
+    names(tbl) <- c("Species", "Detections", "Max confidence", "Outcome")
+    raw_html(details(
+      paste0(head_line, " <span class=\"bn-more\">Show the list</span>"),
+      '<p class="bn-note">Modelled abundance at these coordinates is zero, so a ',
+      'detection here is a misidentification of something that does occur. A ',
+      'species genuinely present but absent from the range model would be ',
+      'wrongly dropped — check this list if you expected something that is not ',
+      'in the report.</p>',
+      html_table_str(tbl, align_right = c("Detections", "Max confidence"))
+    ))
+  } else {
+    cat(head_line, "\n\n")
+  }
+}
+```
+
+## How this report was made
+
+```{r provenance}
+#| output: asis
+model <- cfg$detector$model
+model_note <- if (is.null(model)) {
+  "stock model (no custom classifier configured)"
+} else if (file.exists(model)) {
+  sprintf("`%s` (md5 `%s`)", basename(model),
+          substr(tools::md5sum(model), 1, 12))
+} else {
+  sprintf("`%s` (file not found at report time)", basename(model))
+}
+
+cat(sprintf(
+  "- **Config**: `%s`\n- **Detector**: %s\n- **Model file**: %s\n- **Sites**: %s\n- **birdnetprocess**: %s\n- **R**: %s\n",
+  cfg$path,
+  paste0(cfg$detector$name,
+         if (!is.null(cfg$detector$version)) paste0(" v", cfg$detector$version) else ""),
+  model_note,
+  paste(vapply(cfg$sites, function(s) s$id, character(1)), collapse = ", "),
+  as.character(utils::packageVersion("birdnetprocess")),
+  R.version.string
+))
+
+if (length(b$failures) > 0) {
+  cat('\n::: {.bn-note .bn-warn}\n')
+  cat("Some figures could not be built and are missing above:\n\n")
+  cat(paste0("- ", b$failures, collapse = "\n"))
+  cat("\n:::\n")
+}
+```
