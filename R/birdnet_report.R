@@ -292,14 +292,45 @@ report_bundle <- function(cfg, data = NULL) {
       ) + birdnet_theme()
       # plot_top_species() facets with a free y scale. In a report whose point
       # is comparing sites, panels that look alike but are drawn to different
-      # maxima invite exactly the wrong reading, so pin them to one scale.
-      if (length(sites) > 1) p <- p + ggplot2::facet_wrap(~ Site)
+      # maxima invite exactly the wrong reading, so pin the Y scale.
+      #
+      # X is different. Sites that ran in DISJOINT windows -- a deployment
+      # revisited months later, or two trips reported together -- share a date
+      # axis spanning every window, so each panel draws its own week as a spike
+      # against a flat line covering everyone else's. Free the x scale when the
+      # windows barely overlap, so each panel shows its own period at full
+      # width. Y stays fixed, so magnitudes remain comparable.
+      if (length(sites) > 1) {
+        spans <- lapply(split(above$recording_window_time, above$Site),
+                        function(x) range(x, na.rm = TRUE))
+        covered <- sum(vapply(spans, function(r) as.numeric(diff(r)), numeric(1)))
+        overall <- as.numeric(diff(range(above$recording_window_time, na.rm = TRUE)))
+        free_x <- is.finite(overall) && overall > 0 &&
+          covered / (overall * length(spans)) < 0.5
+        p <- p + ggplot2::facet_wrap(~ Site,
+                                     scales = if (free_x) "free_x" else "fixed")
+      }
       p
     }),
     activity = build("diel activity", {
       has_groups <- "group" %in% names(above)
+      # One row per species. min_detections alone does not bound that: an
+      # unrestricted global vocabulary over a long deployment can clear it with
+      # hundreds of species, and the heatmap becomes a tall strip of unreadable
+      # slivers. Cap it the way the counts plot is capped, and say so, rather
+      # than drawing rows nobody can read.
+      act_top <- max(n_top, 25)
+      act_species <- above |>
+        dplyr::count(.data[["Common Name"]], sort = TRUE) |>
+        utils::head(act_top) |>
+        dplyr::pull("Common Name")
+      act_note <- if (stats$n_species > length(act_species)) {
+        sprintf("Top %d of %d species by detections. ",
+                length(act_species), stats$n_species)
+      }
       plot_daily_activity(
         above, confidence = conf, min_detections = min_det,
+        species = act_species,
         group_col = if (has_groups) "group" else NULL,
         group_colours = groups,
         lat = lat, lon = lon, tz = tz,
@@ -309,7 +340,8 @@ report_bundle <- function(cfg, data = NULL) {
         # legend box to explain them. Naming each colour in the subtitle is
         # the key, and it keeps working for a reader who can't tell the hues
         # apart.
-        subtitle = if (has_groups) group_key(groups, above$group) else NULL
+        subtitle = paste0(act_note,
+                          if (has_groups) group_key(groups, above$group))
       )
     }),
     confidence = build("confidence by species", {

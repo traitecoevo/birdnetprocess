@@ -236,10 +236,28 @@ plot_daily_activity <- function(df,
     strip_theme <- theme(strip.text.y.left = element_text(angle = 0, face = "bold"),
                          strip.placement = "outside")
   }
+  # Hour labels have to fit the panel they are in. In "columns" layout every
+  # extra site is another 24h axis sharing the same figure width, so a fixed
+  # 3-hour break (9 labels) collides with itself once there are more than a
+  # couple of sites. Widen the interval as panels multiply rather than letting
+  # the labels overprint.
+  n_panels <- if (layout == "columns") length(unique(d$Site)) else 1L
+  # Interior breaks only once panels are packed. A break at midnight sits on the
+  # panel edge, so neighbouring panels print "00" twice with nothing between
+  # them; the shaded night bands and the sun/moon strip already mark midnight,
+  # so the label adds nothing and costs legibility.
+  x_hours <- if (n_panels >= 6) 12 else if (n_panels >= 3) c(6, 12, 18) else seq(0, 24, 3)
+  x_scale <- if (n_panels >= 3) {
+    scale_x_datetime(date_labels = "%H", breaks = ref + x_hours * 3600,
+                     limits = c(ref, ref + 86400), expand = c(0, 0))
+  } else {
+    scale_x_datetime(date_labels = "%H", date_breaks = "3 hours",
+                     limits = c(ref, ref + 86400), expand = c(0, 0))
+  }
+
   p <- p +
     facet +
-    scale_x_datetime(date_labels = "%H", date_breaks = "3 hours",
-                     limits = c(ref, ref + 86400), expand = c(0, 0)) +
+    x_scale +
     scale_y_discrete(expand = expansion(add = c(0.6, top_pad))) +
     coord_cartesian(clip = "off") +
     labs(title = title, subtitle = subtitle, x = "time of day (h)", y = NULL) +

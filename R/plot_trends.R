@@ -194,8 +194,22 @@ plot_aggregated_data <- function(data,
 
         # Assuming plot_data matches conventions
         if (nrow(plot_data) > 0) {
+            # Zero-fill within each facet's OWN observed span, not the global
+            # one. A zero here asserts "the recorder was listening and heard
+            # nothing"; crossing every site with every time bin invents that
+            # claim for periods when a site was not deployed at all. Sites that
+            # ran in disjoint windows -- a deployment revisited months later,
+            # or two field trips reported together -- would otherwise each show
+            # one real week against months of fabricated silence.
             plot_data <- plot_data |>
-                tidyr::complete(time_bin = full_time_seq, `Common Name` = species_list, !!rlang::sym(facet_by), fill = list(n = 0))
+                dplyr::group_by(!!rlang::sym(facet_by)) |>
+                dplyr::group_modify(~ tidyr::complete(
+                    .x,
+                    time_bin = seq(min(.x$time_bin), max(.x$time_bin), by = unit),
+                    `Common Name` = species_list,
+                    fill = list(n = 0)
+                )) |>
+                dplyr::ungroup()
         } else {
             # Data empty. Create grid for time/species, but we miss Facet Column values.
             # User sees empty plot. Acceptable fallback.
@@ -227,6 +241,24 @@ plot_aggregated_data <- function(data,
             )
 
             rects <- rects |> dplyr::filter(xmax >= min(full_time_seq) & xmin <= max(full_time_seq))
+
+            # Night bands carry no facet column, so ggplot repeats every band in
+            # every panel. When sites ran in disjoint windows that stretches each
+            # panel across the union of all of them, undoing the per-facet
+            # zero-fill above. Give the bands the facet column, clipped to each
+            # facet's own span, so a panel is only as wide as its own data.
+            if (!is.null(facet_by) && nrow(rects) > 0) {
+                spans <- plot_data |>
+                    dplyr::group_by(!!rlang::sym(facet_by)) |>
+                    dplyr::summarise(lo = min(time_bin), hi = max(time_bin),
+                                     .groups = "drop")
+                rects <- spans |>
+                    dplyr::rowwise() |>
+                    dplyr::reframe(
+                        !!rlang::sym(facet_by) := .data[[facet_by]],
+                        dplyr::filter(rects, xmax >= lo, xmin <= hi)
+                    )
+            }
 
             if (nrow(rects) > 0) {
                 p <- p + ggplot2::geom_rect(
