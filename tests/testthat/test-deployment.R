@@ -297,3 +297,43 @@ test_that("species never detected are left out of the excluded tally", {
 
   expect_equal(nrow(attr(d, "excluded")), 0L)
 })
+
+test_that("detector$venv keeps its symlink instead of resolving to the target", {
+  # A venv's bin/python is a symlink to the base interpreter, and Python works
+  # out whether it is in a venv from the path it was invoked as. Resolving the
+  # symlink hands back the base interpreter, which runs without the venv's
+  # site-packages -- so the detector step dies on `import birdnet_analyzer`.
+  skip_on_os("windows")
+
+  dir <- withr::local_tempdir()
+  base <- file.path(dir, "base", "bin")
+  venv <- file.path(dir, "venv", "bin")
+  dir.create(base, recursive = TRUE)
+  dir.create(venv, recursive = TRUE)
+  writeLines("#!/bin/sh", file.path(base, "python"))
+  file.symlink(file.path(base, "python"), file.path(venv, "python"))
+
+  path <- write_test_deployment(dir, test_deployment_list(
+    detector = list(name = "BirdNET-Analyzer",
+                    venv = "venv/bin/python")
+  ))
+  cfg <- read_deployment(path)
+
+  expect_equal(basename(dirname(dirname(cfg$detector$venv))), "venv")
+  expect_true(file.exists(cfg$detector$venv))
+})
+
+test_that("other detector paths still resolve normally", {
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "models"))
+  file.create(file.path(dir, "models", "head.tflite"))
+
+  path <- write_test_deployment(dir, test_deployment_list(
+    detector = list(name = "BirdNET-Analyzer",
+                    model = "models/head.tflite")
+  ))
+  cfg <- read_deployment(path)
+
+  expect_true(file.exists(cfg$detector$model))
+  expect_equal(basename(cfg$detector$model), "head.tflite")
+})

@@ -87,7 +87,9 @@ read_deployment <- function(path) {
   # Paths in the file are relative to the file, not to getwd().
   cfg$detector$model <- resolve_config_path(cfg$detector$model, dir)
   cfg$detector$labels <- resolve_config_path(cfg$detector$labels, dir)
-  cfg$detector$venv <- resolve_config_path(cfg$detector$venv, dir)
+  # Not follow_symlinks: a venv python must be invoked by its own path.
+  cfg$detector$venv <- resolve_config_path(cfg$detector$venv, dir,
+                                           follow_symlinks = FALSE)
   cfg$analysis$range_filter$raster <-
     resolve_config_path(cfg$analysis$range_filter$raster, dir)
 
@@ -261,8 +263,16 @@ new_deployment <- function(dir, name = NULL, overwrite = FALSE) {
 #' Expands `~` and makes relative paths relative to the YAML file rather than
 #' the working directory, so a deployment folder works from anywhere.
 #'
+#' `follow_symlinks = FALSE` normalises only the directory part and leaves the
+#' final component exactly as written. That matters for `detector$venv`: a
+#' virtualenv's `bin/python` is a symlink to the base interpreter, and Python
+#' decides whether it is running inside a venv from the path it was *invoked*
+#' as, not from the symlink's target. Resolving it hands back the base
+#' interpreter, which then runs without the venv's site-packages and fails on
+#' `import yaml` / `import birdnet_analyzer`.
+#'
 #' @noRd
-resolve_config_path <- function(x, dir) {
+resolve_config_path <- function(x, dir, follow_symlinks = TRUE) {
   if (is.null(x) || !nzchar(x)) {
     return(NULL)
   }
@@ -271,6 +281,11 @@ resolve_config_path <- function(x, dir) {
   is_absolute <- grepl("^(/|[A-Za-z]:)", x)
   if (!is_absolute) {
     x <- file.path(dir, x)
+  }
+  if (!follow_symlinks) {
+    # `bin/` in a virtualenv is a real directory, so normalising the parent is
+    # safe and still collapses any "..", while `python` itself stays untouched.
+    return(file.path(normalizePath(dirname(x), mustWork = FALSE), basename(x)))
   }
   normalizePath(x, mustWork = FALSE)
 }
