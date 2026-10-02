@@ -26,3 +26,6 @@ wilddeserts2-ces1/
 wd3_plots/
 Rplots.pdf
 readme.html
+
+# run logs from exploration scripts
+phenology_explore/*.log
