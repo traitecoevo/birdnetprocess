@@ -6,7 +6,7 @@
 \usage{
 read_birdnet_folder(
   folder = ".",
-  pattern = "BirdNET.*\\\\.(txt|csv)$",
+  pattern = "BirdNET.*\\\\.(txt|csv|parquet)$",
   recursive = FALSE
 )
 }
@@ -14,8 +14,10 @@ read_birdnet_folder(
 \item{folder}{A folder path containing BirdNET files.}
 
 \item{pattern}{A regex pattern to match the files.
-Default matches \code{.txt} or \code{.csv} files that look like BirdNET outputs.
-e.g. "BirdNET.*\\.(txt|csv)$"}
+Default matches \code{.txt}, \code{.csv} or \code{.parquet} files that look like
+BirdNET outputs, e.g. "BirdNET.*\\.(txt|csv|parquet)$". If a folder
+holds the same recordings in more than one format, narrow the pattern
+so each detection is read once.}
 
 \item{recursive}{Whether to search recursively in subfolders. Default FALSE.}
 }

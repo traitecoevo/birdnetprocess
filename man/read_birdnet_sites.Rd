@@ -6,14 +6,14 @@
 \usage{
 read_birdnet_sites(
   folder_paths,
-  pattern = "BirdNET.*\\\\.(txt|csv)$",
+  pattern = "BirdNET.*\\\\.(txt|csv|parquet)$",
   recursive = FALSE
 )
 }
 \arguments{
 \item{folder_paths}{A character vector of folder paths, one for each site.}
 
-\item{pattern}{A regex pattern to match the files. Default "BirdNET.*\\.(txt|csv)$".}
+\item{pattern}{A regex pattern to match the files. Default "BirdNET.*\\.(txt|csv|parquet)$".}
 
 \item{recursive}{Whether to search recursively in subfolders. Default FALSE.}
 }

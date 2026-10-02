@@ -124,6 +124,10 @@ coerce_to_numeric <- function(x) {
 #' @details
 #' The function attempts to read the file based on its extension.
 #' * Ends in `.csv` or `.CSV`: reads as comma-separated.
+#' * Ends in `.parquet`: reads a BirdNET results table stored as Parquet (needs
+#'   the `nanoparquet` package). These are typically *all-window* score stores,
+#'   with a row for every analysis window and no confidence floor, which is what
+#'   [detection_density()] needs to measure recording effort.
 #' * Otherwise: reads as tab-separated (Raven selection table default).
 #'
 #' It also standardizes the start time column:
@@ -153,6 +157,8 @@ read_birdnet_file <- function(file_path, tz = "UTC") {
   # Check file extension to detect format
   if (grepl("\\.csv$", file_path, ignore.case = TRUE)) {
     df <- readr::read_csv(file_path, show_col_types = FALSE)
+  } else if (grepl("\\.parquet$", file_path, ignore.case = TRUE)) {
+    df <- read_parquet_table(file_path)
   } else {
     # Default to tab-delimited (Raven)
     df <- readr::read_delim(file_path, delim = "\t", show_col_types = FALSE)
@@ -281,8 +287,10 @@ read_birdnet_file <- function(file_path, tz = "UTC") {
 #'
 #' @param folder A folder path containing BirdNET files.
 #' @param pattern A regex pattern to match the files.
-#'        Default matches `.txt` or `.csv` files that look like BirdNET outputs.
-#'        e.g. "BirdNET.*\\.(txt|csv)$"
+#'        Default matches `.txt`, `.csv` or `.parquet` files that look like
+#'        BirdNET outputs, e.g. "BirdNET.*\\.(txt|csv|parquet)$". If a folder
+#'        holds the same recordings in more than one format, narrow the pattern
+#'        so each detection is read once.
 #' @param recursive Whether to search recursively in subfolders. Default FALSE.
 #'
 #' @return A single tibble combining all data.
@@ -293,7 +301,7 @@ read_birdnet_file <- function(file_path, tz = "UTC") {
 #' all_detections <- read_birdnet_folder("path/to/folder")
 #' }
 read_birdnet_folder <- function(folder = ".",
-                                pattern = "BirdNET.*\\.(txt|csv)$",
+                                pattern = "BirdNET.*\\.(txt|csv|parquet)$",
                                 recursive = FALSE) {
   # gather all matching files
   files <- list.files(
@@ -326,7 +334,7 @@ read_birdnet_folder <- function(folder = ".",
 #' Read BirdNET selection files from multiple sites (folders)
 #'
 #' @param folder_paths A character vector of folder paths, one for each site.
-#' @param pattern A regex pattern to match the files. Default "BirdNET.*\\.(txt|csv)$".
+#' @param pattern A regex pattern to match the files. Default "BirdNET.*\\.(txt|csv|parquet)$".
 #' @param recursive Whether to search recursively in subfolders. Default FALSE.
 #'
 #' @return A single tibble combining all data.
@@ -339,7 +347,7 @@ read_birdnet_folder <- function(folder = ".",
 #' all_sites <- read_birdnet_sites(folders, pattern = "BirdNET.results.csv$")
 #' }
 read_birdnet_sites <- function(folder_paths,
-                               pattern = "BirdNET.*\\.(txt|csv)$",
+                               pattern = "BirdNET.*\\.(txt|csv|parquet)$",
                                recursive = FALSE) {
   # Helper to read one folder and add Site column
   read_one_site <- function(fp) {
@@ -357,6 +365,20 @@ read_birdnet_sites <- function(folder_paths,
   # Replace purrr::map_dfr with lapply + dplyr::bind_rows
   data_list <- lapply(folder_paths, read_one_site)
   dplyr::bind_rows(data_list)
+}
+
+#' Read a Parquet results table
+#'
+#' Internal. Parquet support is optional: `nanoparquet` is small and has no
+#' system dependencies, so it is a Suggests rather than an Import.
+#'
+#' @noRd
+read_parquet_table <- function(file_path) {
+  if (!requireNamespace("nanoparquet", quietly = TRUE)) {
+    stop("Reading '", basename(file_path), "' needs the 'nanoparquet' package: ",
+         "install.packages(\"nanoparquet\").", call. = FALSE)
+  }
+  tibble::as_tibble(nanoparquet::read_parquet(file_path))
 }
 
 #' Rename a perch-head predictions CSV onto the BirdNET/Raven column names

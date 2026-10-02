@@ -26,6 +26,10 @@ Read a single BirdNET selection table file
 The function attempts to read the file based on its extension.
 \itemize{
 \item Ends in \code{.csv} or \code{.CSV}: reads as comma-separated.
+\item Ends in \code{.parquet}: reads a BirdNET results table stored as Parquet (needs
+the \code{nanoparquet} package). These are typically \emph{all-window} score stores,
+with a row for every analysis window and no confidence floor, which is what
+\code{\link[=detection_density]{detection_density()}} needs to measure recording effort.
 \item Otherwise: reads as tab-separated (Raven selection table default).
 }
 

@@ -28,12 +28,18 @@ Remotes:
 Suggests:
     covr,
     knitr,
+    nanoparquet,
     rmarkdown,
     testthat (>= 3.0.0),
+    ggrepel,
+    ggspatial,
     ggstream,
+    jsonlite,
+    patchwork,
     gt,
     quarto,
     ragg,
+    sf,
     suncalc,
     terra,
     withr

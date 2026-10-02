@@ -1,0 +1,12 @@
+"Daily Weather Observations for Example, New South Wales for June 2026"
+"Prepared at 13:00 UTC on Thursday 17 September 2026   IDCJDW2155.202606"
+"Copyright 2003 Commonwealth Bureau of Meteorology"
+"Observations were drawn from Example AWS {station 000000}"
+
+,"Date","Minimum temperature (°C)","Maximum temperature (°C)","Rainfall (mm)","Evaporation (mm)","Sunshine (hours)","Direction of maximum wind gust ","Speed of maximum wind gust (km/h)","Time of maximum wind gust","9am Temperature (°C)","9am relative humidity (%)","9am cloud amount (oktas)","9am wind direction","9am wind speed (km/h)","9am MSL pressure (hPa)","3pm Temperature (°C)","3pm relative humidity (%)","3pm cloud amount (oktas)","3pm wind direction","3pm wind speed (km/h)","3pm MSL pressure (hPa)"
+,2026-06-1,7.0,20.5,0,,,N,50,14:51,13.7,50,,N,24,1014.5,19.5,41,,N,35,1008.5
+,2026-06-2,13.6,21.1,0,,,WNW,69,12:01,17.0,56,,NW,24,1004.2,20.2,44,,WNW,48,1003.7
+,2026-06-3,10.1,19.7,0,,,WNW,54,16:10,13.4,68,,WNW,26,1011.4,19.1,44,,WNW,33,1009.5
+,2026-06-4,9.7,17.1,0,,,W,59,09:41,13.4,66,,W,35,1010.4,16.9,39,,WSW,31,1012.8
+,2026-06-5,3.2,16.1,0,,,SSW,39,14:52,7.6,85,,WSW,15,1023.8,15.1,42,,SSW,24,1024.0
+,2026-06-6,1.1,18.1,0,,,S,20,14:27,7.3,79,, ,Calm,1030.1,17.1,49,,S,7,1028.7
