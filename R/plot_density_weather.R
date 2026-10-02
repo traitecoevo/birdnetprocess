@@ -25,7 +25,7 @@ density_by_session <- function(dens) {
 }
 
 weather_labels <- c(
-  temperature_2m = "temperature (°C)",
+  temperature_2m = "temperature (\u00b0C)",
   wind_speed_10m = "wind (km/h)",
   wind_gusts_10m = "max gust (km/h)",
   precipitation = "rain in window (mm)",

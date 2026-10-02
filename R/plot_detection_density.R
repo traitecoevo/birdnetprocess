@@ -42,7 +42,7 @@ density_daily_grid <- function(dens, sites = NULL, date_range = NULL) {
 
 density_y_label <- function(confidence) {
   if (is.null(confidence)) "detections per recorded hour"
-  else paste0("detections ≥ ", confidence, " per recorded hour")
+  else paste0("detections \u2265 ", confidence, " per recorded hour")
 }
 
 #' Detection density over time: four alternative views
@@ -253,7 +253,7 @@ plot_density_cumulative <- function(dens, sites = NULL, date_range = NULL,
     ggplot2::labs(
       x = NULL,
       y = if (is.null(confidence)) "cumulative detections"
-          else paste0("cumulative detections ≥ ", confidence),
+          else paste0("cumulative detections \u2265 ", confidence),
       title = title,
       subtitle = subtitle %||% if (length(rest))
         paste0("Grey: ", paste(rest, collapse = ", ")) else NULL
