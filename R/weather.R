@@ -82,11 +82,8 @@ weather_by_session <- function(weather, latitude, longitude, tz,
     w$pressure_change_24h <- w$surface_pressure - dplyr::lag(w$surface_pressure, 24)
   }
   dates <- sort(unique(w$date))
-  st <- suncalc::getSunlightTimes(date = dates, lat = latitude, lon = longitude,
-                                  keep = c("sunrise", "sunset"))
-  as_clock <- function(x) lubridate::force_tz(lubridate::with_tz(x, tz), "UTC")
-  sun <- dplyr::tibble(date = dates, sunrise = as_clock(st$sunrise),
-                       sunset = as_clock(st$sunset))
+  st <- local_sun_times(dates, latitude, longitude, tz)
+  sun <- dplyr::tibble(date = dates, sunrise = st$sunrise, sunset = st$sunset)
 
   value_cols <- setdiff(names(w)[vapply(w, is.numeric, logical(1))], "date")
   summarise_window <- function(event, session) {

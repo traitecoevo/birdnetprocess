@@ -228,11 +228,7 @@ plot_aggregated_data <- function(data,
     if (!is.null(latitude) && !is.null(longitude)) {
         if (requireNamespace("suncalc", quietly = TRUE)) {
             date_range <- seq(from = as.Date(min(full_time_seq)) - 1, to = as.Date(max(full_time_seq)) + 1, by = "day")
-            sun_times <- suncalc::getSunlightTimes(date = date_range, lat = latitude, lon = longitude, keep = c("sunrise", "sunset"))
-
-            align_sun <- function(t, tzone) lubridate::force_tz(lubridate::with_tz(t, tzone), "UTC")
-            sun_times$sunset <- align_sun(sun_times$sunset, tz)
-            sun_times$sunrise <- align_sun(sun_times$sunrise, tz)
+            sun_times <- local_sun_times(date_range, latitude, longitude, tz)
 
             rects <- data.frame(
                 xmin = sun_times$sunset[1:(nrow(sun_times) - 1)],

@@ -173,3 +173,13 @@ test_that("session_anomaly removes each session's seasonal trend", {
   a0 <- session_anomaly(w, "temperature_2m", df = 0)
   expect_equal(mean(a0$temperature_2m_anomaly[a0$session == "dawn"]), 0)
 })
+
+test_that("local_sun_times returns the event on each LOCAL date, whatever suncalc's convention", {
+  skip_if_not_installed("suncalc")
+  d <- as.Date(c("2026-05-01", "2026-12-25"))
+  s <- local_sun_times(d, -31, 141.8, "Australia/Sydney")
+  expect_equal(as.Date(s$sunrise), d)
+  expect_equal(as.Date(s$sunset), d)
+  expect_true(all(s$sunrise < s$sunset))
+  expect_equal(nrow(local_sun_times(as.Date(character(0)), -31, 141.8, "UTC")), 0)
+})

@@ -78,13 +78,9 @@ diel_density <- function(df, sites, tz, confidence = 0.5, bin_min = 5,
   df$date <- as.Date(df$clock)
   sun <- dplyr::distinct(df, .data$Site, .data$date) |>
     dplyr::left_join(sites[, c("Site", "latitude", "longitude")], by = "Site")
-  st <- suncalc::getSunlightTimes(
-    data = data.frame(date = sun$date, lat = sun$latitude, lon = sun$longitude),
-    keep = c("sunrise", "sunset")
-  )
-  as_clock <- function(x) lubridate::force_tz(lubridate::with_tz(x, tz), "UTC")
-  sun$sunrise <- as_clock(st$sunrise)
-  sun$sunset <- as_clock(st$sunset)
+  st <- local_sun_times(sun$date, sun$latitude, sun$longitude, tz)
+  sun$sunrise <- st$sunrise
+  sun$sunset <- st$sunset
 
   df |>
     dplyr::distinct(.data$Site, .data$date, .data$clock, .data$file_name,
