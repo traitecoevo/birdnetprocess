@@ -183,3 +183,95 @@ test_that("local_sun_times returns the event on each LOCAL date, whatever suncal
   expect_true(all(s$sunrise < s$sunset))
   expect_equal(nrow(local_sun_times(as.Date(character(0)), -31, 141.8, "UTC")), 0)
 })
+
+test_that("density_by_night joins an evening with the next morning", {
+  t <- as.POSIXct(c("2026-05-01 17:00", "2026-05-02 06:00", "2026-05-02 17:00"), tz = "UTC")
+  dens <- dplyr::tibble(Site = "A", time = t, `Common Name` = "x",
+                        hours = 1, detections = c(2L, 3L, 5L), rate = c(2, 3, 5))
+  n <- density_by_night(dens)
+  expect_equal(n$time, as.Date(c("2026-05-01", "2026-05-02")))
+  expect_equal(n$detections, c(5L, 5L))
+  expect_equal(n$hours, c(2, 1))
+})
+
+test_that("detection_density_files matches detection_density on the same data", {
+  skip_if_not_installed("nanoparquet")
+  dir <- withr::local_tempdir()
+  w <- all_window_table()
+  for (f in unique(w$file_name)) {
+    x <- w[w$file_name == f, ]
+    nanoparquet::write_parquet(
+      data.frame(`Start (s)` = x$begin_time_s, `End (s)` = x$end_time_s,
+                 `Common name` = x$`Common Name`, Confidence = x$Confidence, check.names = FALSE),
+      file.path(dir, sub("\\.wav$", ".BirdNET.results.parquet", f)))
+  }
+  a <- detection_density_files(list.files(dir, full.names = TRUE), confidence = 0.9, progress = 0)
+  b <- detection_density(w, confidence = 0.9)
+  expect_equal(a$detections, b$detections)
+  expect_equal(a$hours, b$hours)
+})
+
+test_that("candidate_bouts merges windows separated by short gaps", {
+  high <- dplyr::tibble(Site = "A", file_name = "A_20260501_060000.wav",
+                        date = as.Date("2026-05-01"),
+                        begin_time_s = c(0, 3, 12, 30), end_time_s = c(3, 6, 15, 33),
+                        Confidence = c(0.6, 0.9, 0.7, 0.8))
+  b <- candidate_bouts(high, gap_s = 6)
+  expect_equal(nrow(b), 2)          # 0-15 s (gap 6 s) and 30-33 s (gap 15 s)
+  expect_equal(b$n_windows, c(3L, 1L))
+  expect_equal(b$max_score, c(0.9, 0.8))
+})
+
+test_that("score_summary_files and log_quantile_edges recover halving bins", {
+  skip_if_not_installed("nanoparquet")
+  dir <- withr::local_tempdir()
+  set.seed(1)
+  p <- stats::runif(20000)
+  nanoparquet::write_parquet(
+    data.frame(`Start (s)` = seq(0, by = 3, length.out = 20000), `End (s)` = seq(3, by = 3, length.out = 20000),
+               `Common name` = "x", Confidence = p, check.names = FALSE),
+    file.path(dir, "A_20260501_060000.BirdNET.results.parquet"))
+  s <- score_summary_files(list.files(dir, full.names = TRUE), keep_above = 0.99, progress = 0)
+  expect_equal(sum(s$hist$n), 20000)
+  expect_equal(nrow(s$high), sum(p >= 0.99))
+  e <- log_quantile_edges(s$hist, s$grid, n_bins = 4)
+  expect_equal(e$upper[1:3], c(0.5, 0.75, 0.875), tolerance = 0.02)
+  expect_equal(sum(e$windows), 20000)
+})
+
+test_that("sample_windows_by_bin samples within bins and records inclusion probabilities", {
+  set.seed(2)
+  w <- dplyr::tibble(Site = rep(c("A", "B"), each = 500), Confidence = stats::runif(1000))
+  edges <- dplyr::tibble(lower = c(0, 0.5, 0.9), upper = c(0.5, 0.9, 1))
+  s <- sample_windows_by_bin(w, edges, n_per_bin = c(A = 10, B = 4), seed = 3)
+  expect_equal(nrow(s), 3 * 10 + 3 * 4)
+  pop <- attr(s, "population")
+  expect_equal(sum(pop$bin_windows), 1000)
+  a_top <- s[s$Site == "A" & s$bin == 3, ]
+  expect_equal(unique(a_top$inclusion_prob), 10 / pop$bin_windows[pop$Site == "A" & pop$bin == 3])
+  expect_true(all(a_top$Confidence >= 0.9))
+})
+
+test_that("cut_review_clips writes blinded, shuffled clips", {
+  skip_if(!nzchar(Sys.which("ffmpeg")))
+  dir <- withr::local_tempdir()
+  src <- file.path(dir, "SiteA_20260501_060000.wav")
+  system2("ffmpeg", c("-v", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=30:sample_rate=16000", shQuote(src)))
+  clips <- dplyr::tibble(source_path = src, begin_time_s = c(3, 15, 27), end_time_s = c(6, 18, 30),
+                         Site = "SiteA")
+  r <- cut_review_clips(clips, file.path(dir, "packet"), seed = 1)
+  expect_true(all(r$key$cut_ok))
+  expect_false(any(grepl("SiteA|2026", names(r$sheet)) | grepl("SiteA", unlist(r$sheet))))
+  expect_equal(sort(r$key$begin_time_s), c(3, 15, 27))
+  expect_equal(r$sheet$target_start_s[r$key$begin_time_s == 3], 3)  # clip starts at 0
+  expect_true(all(file.exists(file.path(dir, "packet", r$sheet$clip_file))))
+})
+
+test_that("sample_windows_by_bin accepts a quota per bin", {
+  set.seed(4)
+  w <- dplyr::tibble(pool = "all", Confidence = stats::runif(2000))
+  edges <- dplyr::tibble(lower = c(0, 0.5, 0.9), upper = c(0.5, 0.9, 1))
+  s <- sample_windows_by_bin(w, edges, n_per_bin = c(2, 5, 30), strata = "pool", seed = 1)
+  expect_equal(as.vector(table(s$bin)), c(2, 5, 30))
+  expect_error(sample_windows_by_bin(w, edges, n_per_bin = c(1, 2), strata = "pool"), "one entry per bin")
+})

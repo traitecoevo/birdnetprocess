@@ -232,3 +232,29 @@ plot_activity_vs_covariate <- function(data, x, x_label = x, sites = NULL,
     ggplot2::theme(legend.position = if (length(sessions) > 1) "top" else "none",
                    legend.justification = "left")
 }
+
+#' Detection density per night (dusk plus the following dawn)
+#'
+#' @description
+#' For recorders scheduled around sunset and sunrise, groups each evening
+#' session with the next morning's session into one "night", labelled by the
+#' evening's date. Hours before noon belong to the previous night.
+#'
+#' @param dens Output of `detection_density(..., unit = "hour")` or
+#'   [detection_density_files()] with `unit = "hour"`.
+#' @return A tibble: `Site`, `time` (the night's evening date, a `Date`),
+#'   `hours`, `detections`, `rate`. It can be passed to the `plot_density_*()`
+#'   views, which then show one column per night.
+#' @export
+density_by_night <- function(dens) {
+  if (!inherits(dens$time, "POSIXct")) {
+    stop("density_by_night() needs hourly detection density.", call. = FALSE)
+  }
+  dens |>
+    dplyr::mutate(time = as.Date(.data$time) -
+                    (as.integer(format(.data$time, "%H")) < 12)) |>
+    dplyr::group_by(.data$Site, .data$time) |>
+    dplyr::summarise(hours = sum(.data$hours), detections = sum(.data$detections),
+                     .groups = "drop") |>
+    dplyr::mutate(rate = .data$detections / .data$hours)
+}

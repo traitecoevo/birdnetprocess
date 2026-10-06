@@ -123,3 +123,36 @@ detection_density <- function(df,
 site_from_file <- function(file_name) {
   sub("_[0-9]{8}_[0-9]{6}.*$", "", basename(file_name))
 }
+
+#' Detection density over many score files, one file at a time
+#'
+#' @description
+#' [detection_density()] for a whole score store too large to hold in memory:
+#' each file is read, summarised and discarded, and only the per-bin totals are
+#' kept. Suits all-window stores of thousands of recordings.
+#'
+#' @param files Paths to score files readable by [read_birdnet_file()].
+#' @param site_fun Function mapping a recording file name to a site name.
+#'   Default: the filename prefix before the `_YYYYMMDD_HHMMSS` stamp.
+#' @param progress Print a line every this many files (0 for silence).
+#' @inheritParams detection_density
+#'
+#' @return As [detection_density()].
+#' @export
+detection_density_files <- function(files, confidence = 0.5, unit = c("day", "hour"),
+                                     species = NULL, site_fun = site_from_file,
+                                     progress = 1000) {
+  unit <- match.arg(unit)
+  out <- vector("list", length(files))
+  for (i in seq_along(files)) {
+    d <- suppressMessages(read_birdnet_file(files[i]))
+    d$Site <- site_fun(basename(files[i]))
+    out[[i]] <- detection_density(d, confidence = confidence, unit = unit, species = species)
+    if (progress > 0 && i %% progress == 0) message(i, " / ", length(files), " files")
+  }
+  dplyr::bind_rows(out) |>
+    dplyr::group_by(.data$Site, .data$time, .data$`Common Name`) |>
+    dplyr::summarise(hours = sum(.data$hours), detections = sum(.data$detections),
+                     .groups = "drop") |>
+    dplyr::mutate(rate = .data$detections / .data$hours)
+}
