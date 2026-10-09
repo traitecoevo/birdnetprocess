@@ -12,8 +12,13 @@
 #'   recording (`0` or `NA`).
 #' @param value Name of the column to size points by. Default `"detections"`.
 #' @param value_label Legend title for point size.
+#' @param log_offset Point area scales with `log10(value + log_offset)`.
+#'   Default 1 suits counts; use a small offset (e.g. 0.01) for rates that
+#'   can be well below 1.
 #' @param labels Label each site with its name and total? Default `TRUE`.
 #'   Uses `ggrepel` when installed so labels avoid each other.
+#' @param label_col Optional column holding each site's label text, used
+#'   instead of the default "name  total" (e.g. "22/23 verified").
 #' @param layers Optional list of ggplot layers drawn beneath the points, e.g.
 #'   `geom_sf()` layers of rivers or boundaries (these need the `sf` package).
 #' @param scale_bar Add a scale bar? Default `TRUE`; needs `ggspatial`.
@@ -29,8 +34,8 @@
 #' plot_site_map(totals)
 #' }
 plot_site_map <- function(totals, value = "detections",
-                          value_label = "detections",
-                          labels = TRUE, layers = NULL, scale_bar = TRUE,
+                          value_label = "detections", log_offset = 1,
+                          labels = TRUE, label_col = NULL, layers = NULL, scale_bar = TRUE,
                           title = NULL, subtitle = NULL) {
   missing <- setdiff(c("Site", "latitude", "longitude", value), names(totals))
   if (length(missing)) {
@@ -39,17 +44,19 @@ plot_site_map <- function(totals, value = "detections",
   }
   d <- totals
   d$value <- d[[value]]
-  recorded <- if ("hours" %in% names(d)) !is.na(d$hours) & d$hours > 0 else TRUE
+  recorded <- if ("hours" %in% names(d)) !is.na(d$hours) & d$hours > 0 else rep(TRUE, nrow(d))
   d$state <- ifelse(!recorded, "not recording",
                     ifelse(d$value > 0, "detected", "none detected"))
-  d$size <- log10(d$value + 1)
-  d$label <- ifelse(d$state == "not recording", paste0(d$Site, " (no recording)"),
-                    paste0(d$Site, "  ", format(d$value, big.mark = ",", trim = TRUE)))
+  d$size <- log10(d$value + log_offset) - log10(log_offset)
+  d$label <- if (!is.null(label_col)) d[[label_col]] else
+    ifelse(d$state == "not recording", paste0(d$Site, " (no recording)"),
+           paste0(d$Site, "  ", format(d$value, big.mark = ",", trim = TRUE)))
 
   pos <- d[d$state == "detected", ]
   zero <- d[d$state != "detected", ]
-  top <- max(pos$value, 1)
-  breaks <- 10^(0:ceiling(log10(top)))
+  top <- max(pos$value, log_offset)
+  low <- if (nrow(pos)) min(pos$value) else log_offset
+  breaks <- 10^(floor(log10(max(low, log_offset))):ceiling(log10(top)))
   breaks <- breaks[breaks <= top * 1.5]
 
   p <- ggplot2::ggplot()
@@ -65,8 +72,10 @@ plot_site_map <- function(totals, value = "detections",
       stroke = 0.6, alpha = 0.9
     ) +
     ggplot2::scale_size_area(
-      max_size = 11, breaks = log10(breaks + 1),
-      labels = format(breaks, big.mark = ",", trim = TRUE),
+      max_size = 11, breaks = log10(breaks + log_offset) - log10(log_offset),
+      # Keep every legend size inside the scale, or ggplot silently drops it.
+      limits = c(0, max(c(pos$size, log10(breaks + log_offset) - log10(log_offset)))),
+      labels = format(breaks, big.mark = ",", trim = TRUE, drop0trailing = TRUE, scientific = FALSE),
       name = paste0(value_label, "\n(log scale)")
     ) +
     ggplot2::scale_shape_manual(

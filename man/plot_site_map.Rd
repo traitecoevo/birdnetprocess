@@ -8,7 +8,9 @@ plot_site_map(
   totals,
   value = "detections",
   value_label = "detections",
+  log_offset = 1,
   labels = TRUE,
+  label_col = NULL,
   layers = NULL,
   scale_bar = TRUE,
   title = NULL,
@@ -24,8 +26,15 @@ recording (\code{0} or \code{NA}).}
 
 \item{value_label}{Legend title for point size.}
 
+\item{log_offset}{Point area scales with \code{log10(value + log_offset)}.
+Default 1 suits counts; use a small offset (e.g. 0.01) for rates that
+can be well below 1.}
+
 \item{labels}{Label each site with its name and total? Default \code{TRUE}.
 Uses \code{ggrepel} when installed so labels avoid each other.}
+
+\item{label_col}{Optional column holding each site's label text, used
+instead of the default "name  total" (e.g. "22/23 verified").}
 
 \item{layers}{Optional list of ggplot layers drawn beneath the points, e.g.
 \code{geom_sf()} layers of rivers or boundaries (these need the \code{sf} package).}

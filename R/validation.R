@@ -224,3 +224,137 @@ cut_review_clips <- function(clips, out_dir, pad_s = 4.5, mono = TRUE, seed = 1,
   utils::write.csv(sheet, file.path(out_dir, "listening_sheet.csv"), row.names = FALSE)
   list(sheet = sheet, key = key)
 }
+
+#' Score-to-true-positive curve from labelled windows
+#'
+#' @description
+#' Logistic regression of verified label on logit(score): the probability
+#' that a window with a given detector score truly contains the target. Within
+#' score bins the windows were sampled at random, so the conditional curve
+#' needs no weights. Also returns the observed share per bin with Wilson 95%
+#' intervals, and the scores at which the curve crosses 0.5 and 0.9.
+#'
+#' @param labelled Data frame with `Confidence` and a logical `tp` (unsure
+#'   labels removed or recoded beforehand). An optional `bin` column gives the
+#'   per-bin summary.
+#' @return A list: `fit` (glm), `curve` (`score`, `p`, `lo`, `hi`),
+#'   `bins` (`bin`, `n`, `tp`, `share`, `lo`, `hi`, `mid_score`) and
+#'   `thresholds` (scores where p = 0.5 and 0.9).
+#' @export
+fit_score_calibration <- function(labelled) {
+  d <- labelled
+  d$z <- stats::qlogis(pmin(pmax(d$Confidence, 1e-6), 1 - 1e-6))
+  fit <- stats::glm(tp ~ z, family = stats::binomial, data = d)
+  zs <- seq(min(d$z), max(d$z), length.out = 200)
+  pr <- stats::predict(fit, newdata = data.frame(z = zs), se.fit = TRUE)
+  curve <- dplyr::tibble(score = stats::plogis(zs), p = stats::plogis(pr$fit),
+                         lo = stats::plogis(pr$fit - 1.96 * pr$se.fit),
+                         hi = stats::plogis(pr$fit + 1.96 * pr$se.fit))
+  wilson <- function(k, n) {
+    p <- k / n; z <- 1.96; den <- 1 + z^2 / n
+    c((p + z^2 / (2 * n) - z * sqrt(p * (1 - p) / n + z^2 / (4 * n^2))) / den,
+      (p + z^2 / (2 * n) + z * sqrt(p * (1 - p) / n + z^2 / (4 * n^2))) / den)
+  }
+  bins <- NULL
+  if ("bin" %in% names(d)) {
+    bins <- d |> dplyr::group_by(.data$bin) |>
+      dplyr::summarise(n = dplyr::n(), tp = sum(.data$tp),
+                       mid_score = stats::median(.data$Confidence), .groups = "drop") |>
+      dplyr::mutate(share = .data$tp / .data$n,
+                    lo = mapply(function(k, n) wilson(k, n)[1], .data$tp, .data$n),
+                    hi = mapply(function(k, n) wilson(k, n)[2], .data$tp, .data$n))
+  }
+  b <- stats::coef(fit)
+  at <- function(p) stats::plogis((stats::qlogis(p) - b[1]) / b[2])
+  list(fit = fit, curve = curve, bins = bins,
+       thresholds = c(p50 = unname(at(0.5)), p90 = unname(at(0.9))))
+}
+
+#' Plot a score-to-true-positive curve
+#'
+#' @param cal Output of [fit_score_calibration()].
+#' @param title,subtitle Plot title and subtitle.
+#' @return A `ggplot` object: the fitted curve with its 95% band, observed bin
+#'   shares with Wilson intervals, and the labelled windows as a rug.
+#' @export
+plot_score_calibration <- function(cal, title = NULL, subtitle = NULL) {
+  d <- cal$fit$data
+  p <- ggplot2::ggplot(cal$curve, ggplot2::aes(.data$score, .data$p)) +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$lo, ymax = .data$hi),
+                         fill = birdnet_palette(1), alpha = 0.15) +
+    ggplot2::geom_line(colour = birdnet_palette(1), linewidth = 0.9) +
+    ggplot2::geom_rug(data = d[d$tp, ], ggplot2::aes(.data$Confidence, y = 1), sides = "t",
+                      colour = birdnet_ink$secondary, alpha = 0.5, inherit.aes = FALSE) +
+    ggplot2::geom_rug(data = d[!d$tp, ], ggplot2::aes(.data$Confidence, y = 0), sides = "b",
+                      colour = birdnet_ink$secondary, alpha = 0.5, inherit.aes = FALSE)
+  if (!is.null(cal$bins)) {
+    p <- p +
+      ggplot2::geom_linerange(data = cal$bins, ggplot2::aes(.data$mid_score, ymin = .data$lo, ymax = .data$hi),
+                              colour = birdnet_ink$primary, linewidth = 0.4, inherit.aes = FALSE) +
+      ggplot2::geom_point(data = cal$bins, ggplot2::aes(.data$mid_score, .data$share),
+                          colour = birdnet_ink$primary, size = 2, inherit.aes = FALSE) +
+      ggplot2::geom_text(data = cal$bins, ggplot2::aes(.data$mid_score, .data$share,
+                                                       label = paste0(.data$tp, "/", .data$n)),
+                         vjust = -1, size = 2.6, colour = birdnet_ink$secondary, inherit.aes = FALSE)
+  }
+  p +
+    ggplot2::scale_x_continuous(transform = "logit",
+                                breaks = c(0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 0.7, 0.9, 0.99)) +
+    ggplot2::scale_y_continuous(limits = c(0, 1.08), breaks = seq(0, 1, 0.25)) +
+    ggplot2::labs(x = "detector score (logit scale)", y = "probability the window is a true call",
+                  title = title, subtitle = subtitle) +
+    birdnet_theme(base_size = 10)
+}
+
+#' Calibrated detection density over score files
+#'
+#' @description
+#' Applies a score-to-true-positive curve from [fit_score_calibration()] to
+#' every window of every file and sums the probabilities, giving the expected
+#' number of true call windows per site and time bin instead of a count above
+#' an arbitrary threshold. Only valid where the curve was fitted: the
+#' probability that a score is a true call depends on how common calls are,
+#' so a curve fitted where calls were dense overstates them where calls are
+#' rare. Restrict `files` to the sites and dates the calibration sample
+#' covered.
+#'
+#' @param files Score files readable by [read_birdnet_file()].
+#' @param cal Output of [fit_score_calibration()].
+#' @param floor Windows scoring below this contribute nothing. Use it to drop
+#'   the low-score range where the curve rests on few labels (a lower bound).
+#' @param windows_per_call Divide expected true windows by this to get calls
+#'   (a call can span two windows). Default 1 (windows).
+#' @param unit `"hour"` (default) or `"day"`.
+#' @param site_fun Function mapping a file name to a site name.
+#'
+#' @return A tibble like [detection_density()]: `Site`, `time`, `hours`, and
+#'   `detections` holding the expected number of true calls (not an integer),
+#'   with `rate` per recorded hour.
+#' @export
+calibrated_density_files <- function(files, cal, floor = 0, windows_per_call = 1,
+                                     unit = c("hour", "day"), site_fun = site_from_file) {
+  unit <- match.arg(unit)
+  b <- stats::coef(cal$fit)
+  out <- vector("list", length(files))
+  for (i in seq_along(files)) {
+    d <- suppressMessages(read_birdnet_file(files[i]))
+    z <- stats::qlogis(pmin(pmax(d$Confidence, 1e-6), 1 - 1e-6))
+    p <- ifelse(d$Confidence >= floor, stats::plogis(b[1] + b[2] * z), 0)
+    t <- detection_time(d)
+    out[[i]] <- dplyr::tibble(
+      Site = site_fun(basename(files[i])),
+      time = if (unit == "day") as.Date(t) else lubridate::floor_date(t, "hour"),
+      p = p, window = 1
+    ) |>
+      dplyr::group_by(.data$Site, .data$time) |>
+      dplyr::summarise(expected = sum(.data$p), windows = sum(.data$window), .groups = "drop")
+  }
+  window_s <- 3
+  dplyr::bind_rows(out) |>
+    dplyr::group_by(.data$Site, .data$time) |>
+    dplyr::summarise(expected = sum(.data$expected), windows = sum(.data$windows), .groups = "drop") |>
+    dplyr::mutate(hours = .data$windows * window_s / 3600,
+                  detections = .data$expected / windows_per_call,
+                  rate = .data$detections / .data$hours) |>
+    dplyr::select("Site", "time", "hours", "detections", "rate")
+}

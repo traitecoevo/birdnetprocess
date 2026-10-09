@@ -275,3 +275,38 @@ test_that("sample_windows_by_bin accepts a quota per bin", {
   expect_equal(as.vector(table(s$bin)), c(2, 5, 30))
   expect_error(sample_windows_by_bin(w, edges, n_per_bin = c(1, 2), strata = "pool"), "one entry per bin")
 })
+
+test_that("fit_score_calibration recovers a logistic score-truth curve", {
+  set.seed(5)
+  sc <- stats::plogis(stats::rnorm(800, -2, 2))
+  tp <- stats::runif(800) < stats::plogis(1 + 1.5 * stats::qlogis(sc))
+  cal <- fit_score_calibration(data.frame(Confidence = sc, tp = tp, bin = cut(sc, 4, labels = FALSE)))
+  expect_equal(unname(stats::coef(cal$fit)), c(1, 1.5), tolerance = 0.25)
+  expect_equal(cal$thresholds[["p50"]], stats::plogis(-1 / 1.5), tolerance = 0.05)
+  expect_equal(nrow(cal$bins), 4)
+  expect_s3_class(plot_score_calibration(cal), "ggplot")
+})
+
+test_that("plot_site_map works without an hours column", {
+  totals <- dplyr::tibble(Site = c("A", "B", "C"), latitude = c(-31, -31.01, -31.02),
+                          longitude = c(141.8, 141.81, 141.82), detections = c(0L, 5L, 50L))
+  built <- ggplot2::ggplot_build(plot_site_map(totals, labels = FALSE, scale_bar = FALSE))
+  expect_equal(nrow(built$data[[1]]), 1)  # only A is "none detected"
+  expect_equal(nrow(built$data[[2]]), 2)  # B and C are sized points
+})
+
+test_that("calibrated_density_files sums curve probabilities per hour", {
+  skip_if_not_installed("nanoparquet")
+  dir <- withr::local_tempdir()
+  sc <- c(rep(0.001, 1000), rep(0.9, 200))
+  nanoparquet::write_parquet(
+    data.frame(`Start (s)` = seq(0, by = 3, length.out = 1200), `End (s)` = seq(3, by = 3, length.out = 1200),
+               `Common name` = "x", Confidence = sc, check.names = FALSE),
+    file.path(dir, "A_20260501_060000.BirdNET.results.parquet"))
+  set.seed(6)
+  cal <- suppressWarnings(fit_score_calibration(data.frame(  # separable on purpose
+    Confidence = c(runif(50, 0, 0.01), runif(50, 0.5, 1)), tp = rep(c(FALSE, TRUE), each = 50))))
+  r <- calibrated_density_files(list.files(dir, full.names = TRUE), cal, floor = 0.01)
+  expect_equal(sum(r$hours), 1)
+  expect_equal(sum(r$detections), 200, tolerance = 0.5)  # the 0.9 windows are ~certain; 0.001 are below floor
+})
